@@ -1,0 +1,56 @@
+{
+  "name": "ozean",
+  "version": "0.1.0",
+  "description": "A modern, simple, and high-performance web framework for Bun, inspired by Angular's architecture.",
+  "keywords": [
+    "bun",
+    "framework",
+    "web",
+    "typescript",
+    "angular",
+    "di",
+    "dependency injection",
+    "module",
+    "ozean"
+  ],
+  "author": "Thiti Yamsung <mr.thiti@icloud.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ozean-js/ozean"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "lint-staged": {
+    "src/**/*.ts": "prettier -c"
+  },
+  "scripts": {
+    "prepare": "husky install",
+    "prettier:check": "prettier -c \"src/**/*.ts\"",
+    "prettier:write": "prettier --write \"src/**/*.ts\"",
+    "dev": "bun run examples/example.ts",
+    "clean": "rimraf ./dist",
+    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --outDir dist",
+    "build:js": "bun build ./src/index.ts --outdir ./dist --target bun --format esm --format cjs --sourcemap=external",
+    "build": "bun run clean && bun run build:types && bun run build:js",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/reflect-metadata": "^0.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0",
+    "prettier": "^3.5.3",
+    "rimraf": "^6.0.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
+  }
+}
