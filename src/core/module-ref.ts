@@ -2,6 +2,7 @@ import { IModuleRef, ModuleMetadata } from 'interfaces/module-ref.interface';
 
 export class ModuleRef implements IModuleRef {
   public readonly metadata: ModuleMetadata;
+  public readonly isGlobal: boolean;
   public readonly imports = new Set<IModuleRef>();
   public readonly providers = new Map<
     Function,
@@ -14,7 +15,9 @@ export class ModuleRef implements IModuleRef {
     if (!meta) {
       throw new Error(`Module ${this.token.name} is missing @Module() decorator or metadata.`);
     }
+
     this.metadata = meta;
+    this.isGlobal = !!meta.global;
 
     if (meta.providers) {
       for (const providerToken of meta.providers) {
