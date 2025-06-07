@@ -1,10 +1,8 @@
 name: Check code quality.
 
 on:
-  push:
-    branches: ['main']
   pull_request:
-    branches: ['main']
+    branches: ['develop', 'main']
 
 jobs:
   quality-check:
