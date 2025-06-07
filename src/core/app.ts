@@ -9,6 +9,7 @@ export class App {
   private moduleRefs = new Map<Function, IModuleRef>();
   private rootModuleRef!: IModuleRef;
   private globalMiddlewares: (new (...args: any[]) => Middleware)[] = [];
+  private globalModuleRefs = new Set<IModuleRef>();
 
   constructor(private rootModuleClass: Function) {
     console.log(`Initializing app with root module: ${this.rootModuleClass.name}`);
@@ -31,6 +32,10 @@ export class App {
 
     const moduleRef = new ModuleRef(moduleClass);
     this.moduleRefs.set(moduleClass, moduleRef);
+
+    if (moduleRef.isGlobal) {
+      this.globalModuleRefs.add(moduleRef);
+    }
 
     if (moduleClass === (this as any).rootModuleClass) {
       (this as any).rootModuleRef = moduleRef;
@@ -62,7 +67,7 @@ export class App {
       this._bootstrapInstances(importedRef, processed);
     }
 
-    const currentContext = createResolutionContext(moduleRef);
+    const currentContext = createResolutionContext(moduleRef, this.globalModuleRefs);
 
     if (moduleRef.metadata.providers) {
       for (const ProviderClass of moduleRef.metadata.providers) {
@@ -91,6 +96,7 @@ export class App {
     };
 
     const globalMiddlewareClasses = this.globalMiddlewares;
+    const globalModuleRefs = this.globalModuleRefs;
 
     Bun.serve({
       port,
@@ -112,7 +118,7 @@ export class App {
             return new Response(errorMessage, { status: 500 });
           }
 
-          const controllerContext = createResolutionContext(controllerModuleRef);
+          const controllerContext = createResolutionContext(controllerModuleRef, globalModuleRefs);
 
           const routeMiddlewares =
             Reflect.getMetadata(

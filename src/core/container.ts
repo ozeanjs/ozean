@@ -4,13 +4,14 @@ const SINGLETONS = new Map<Function, any>();
 
 export interface ResolutionContext {
   requestingModuleRef: IModuleRef;
+  globalModuleRefs: Set<IModuleRef>;
 }
 
 function canResolveProvider<T>(
   tokenToResolve: new (...args: any[]) => T,
   context: ResolutionContext
 ): boolean {
-  const { requestingModuleRef } = context;
+  const { requestingModuleRef, globalModuleRefs } = context;
 
   if (requestingModuleRef.metadata.controllers?.includes(tokenToResolve)) {
     return true;
@@ -28,6 +29,17 @@ function canResolveProvider<T>(
       return true;
     }
   }
+
+  for (const globalModuleRef of globalModuleRefs) {
+    if (globalModuleRef === requestingModuleRef) continue;
+    if (
+      globalModuleRef.hasProvider(tokenToResolve) &&
+      globalModuleRef.isProviderExported(tokenToResolve)
+    ) {
+      return true;
+    }
+  }
+
   return false;
 }
 
@@ -84,8 +96,14 @@ export function resolve<T>(Token: new (...args: any[]) => T, context: Resolution
   return instance;
 }
 
-export function createResolutionContext(moduleRef: IModuleRef): ResolutionContext {
-  return { requestingModuleRef: moduleRef };
+export function createResolutionContext(
+  moduleRef: IModuleRef,
+  globalModuleRefs: Set<IModuleRef>
+): ResolutionContext {
+  return {
+    requestingModuleRef: moduleRef,
+    globalModuleRefs: globalModuleRefs,
+  };
 }
 
 export function _test_clearSingletons(): void {
