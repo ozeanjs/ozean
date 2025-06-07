@@ -17,7 +17,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ozean-js/ozean"
+    "url": "https://github.com/ozean-js/ozean.js"
   },
   "files": [
     "dist"
