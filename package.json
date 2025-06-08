@@ -18,14 +18,22 @@
     "module",
     "Fully Typed",
     "decorator",
-    "web server"
+    "web server",
+    "http",
+    "web",
+    "server"
   ],
-  "author": "Thiti Yamsung <mr.thiti@icloud.com>",
+  "author": {
+    "name": "Thiti Yamsung",
+    "email": "hi@thiti.dev",
+    "url": "https://thiti.dev"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ozeanjs/ozean"
   },
+  "homepage": "https://ozeanjs.com",
   "files": [
     "dist"
   ],
