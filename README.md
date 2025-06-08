@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://ozeanjs.com">
+    <img src="./docs/assets/logo.png" alt="Ozean.js" width="150">
+  </a>
+</p>
+
 # Ozean.js 🌊
 
 Welcome to **Ozean.js**!
