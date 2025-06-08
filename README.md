@@ -1,8 +1,14 @@
-# Ozean.js 🌊
+<p align="center">
+  <a href="https://ozeanjs.com">
+    <img src="./docs/assets/logo.png" alt="OzeanJs" width="150">
+  </a>
+</p>
 
-Welcome to **Ozean.js**!
+# OzeanJs 🌊
 
-Ozean.js is a modern, simple, and high-performance web framework built on the Bun runtime. It aims to provide a fast development experience with a clear structure, similar to the architecture many are familiar with in **Angular**.
+Welcome to **OzeanJs**!
+
+OzeanJs is a modern, simple, and high-performance web framework built on the Bun runtime. It aims to provide a fast development experience with a clear structure, similar to the architecture many are familiar with in **Angular**.
 
 ## Key Features
 
@@ -26,11 +32,11 @@ Ozean.js is a modern, simple, and high-performance web framework built on the Bu
 
 2.  **Install necessary dependencies:**
 
-    - **Install Ozean.js**:
+    - **Install OzeanJs**:
       ```bash
       bun add ozean
       ```
-    - **Install `reflect-metadata`**: Ozean.js uses `reflect-metadata` for its Dependency Injection system. You need to install and import it into your project.
+    - **Install `reflect-metadata`**: OzeanJs uses `reflect-metadata` for its Dependency Injection system. You need to install and import it into your project.
       ```bash
       bun add reflect-metadata
       ```
@@ -113,7 +119,7 @@ Ozean.js is a modern, simple, and high-performance web framework built on the Bu
 
     app.listen(port);
 
-    console.log(`🌊 Ozean.js application is running on http://localhost:${port}`);
+    console.log(`🌊 OzeanJs application is running on http://localhost:${port}`);
     ```
 
 ### Step 3: Run the Application
@@ -134,7 +140,7 @@ When you open your browser or use `curl` to access `http://localhost:3000/cats`,
 
 ### Modules
 
-Similar to `NgModule` in Angular, Modules in Ozean.js help you organize related features. The `@Module` decorator accepts a metadata object with the following properties:
+Similar to `NgModule` in Angular, Modules in OzeanJs help you organize related features. The `@Module` decorator accepts a metadata object with the following properties:
 
 - `imports`: An array of other modules to import, allowing access to their exported providers.
 - `controllers`: An array of controllers to be handled by this module.
@@ -143,7 +149,7 @@ Similar to `NgModule` in Angular, Modules in Ozean.js help you organize related 
 
 ### Dependency Injection
 
-Simply add the `@Injectable()` decorator to your Provider class and specify its type in the constructor of the class where it's needed (like a Controller). The Ozean.js DI system will automatically create and inject the correct instance.
+Simply add the `@Injectable()` decorator to your Provider class and specify its type in the constructor of the class where it's needed (like a Controller). The OzeanJs DI system will automatically create and inject the correct instance.
 
 ### Controllers and Routing
 
@@ -153,4 +159,4 @@ Use intuitive decorators to define your routes:
 - `@Get('/path')`, `@Post()`, `@Put()`, `@Delete()`, `@Patch()`: Binds a method to an HTTP verb and path.
 - `@Param('id')`, `@Query('search')`, `@Body()`: Easily extract data from the request.
 
-Happy coding with Ozean.js!
+Happy coding with OzeanJs!
