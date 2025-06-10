@@ -1,0 +1,47 @@
+{
+  "name": "@ozean/cli",
+  "version": "0.4.0",
+  "description": "This is the official Command-Line Interface (CLI) for the OzeanJs Framework. It helps you kickstart new projects.",
+  "keywords": [
+    "ozean",
+    "ozeanjs",
+    "cli",
+    "bun",
+    "framework",
+    "scaffolding",
+    "generator",
+    "schematics",
+    "typescript",
+    "angular-style"
+  ],
+  "author": {
+    "name": "Thiti Yamsung",
+    "email": "hi@thiti.dev",
+    "url": "https://thiti.dev"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ozeanjs/ozean"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "bin": {
+    "ozean": "dist/index.js"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target=bun"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "execa": "^9.6.0"
+  }
+}

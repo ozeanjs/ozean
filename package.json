@@ -4,16 +4,21 @@
     "packages/*"
   ],
   "lint-staged": {
-    "packages/ozean/src/**/*.ts": "prettier -c"
+    "packages/ozean/src/**/*.ts": "prettier -c",
+    "packages/ozean-cli/src/**/*.ts": "prettier -c"
   },
   "scripts": {
     "prepare": "husky install",
-    "prettier:check": "bun run ozean:prettier:check",
-    "build": "bun run ozean:build",
+    "prettier:check": "bun run ozean:prettier:check && bun run ozean-cli:prettier:check",
+    "prettier:write": "bun run ozean:prettier:write && bun run ozean-cli:prettier:write",
+    "build": "bun run ozean:build && bun run ozean-cli:build",
     "bump": "bun run ozean:bump",
     "ozean:build": "cd packages/ozean && bun run build",
     "ozean:prettier:check": "prettier -c \"packages/ozean/src/**/*.ts\"",
     "ozean:prettier:write": "prettier --write \"packages/ozean/src/**/*.ts\"",
+    "ozean-cli:prettier:check": "prettier -c \"packages/ozean-cli/src/**/*.ts\"",
+    "ozean-cli:prettier:write": "prettier --write \"packages/ozean-cli/src/**/*.ts\"",
+    "ozean-cli:build": "cd packages/ozean-cli && bun run build",
     "bump:patch": "bun run bump-versions.ts patch",
     "bump:minor": "bun run bump-versions.ts minor",
     "bump:major": "bun run bump-versions.ts major"
