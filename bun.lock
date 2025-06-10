@@ -2,7 +2,15 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
+      "devDependencies": {
+        "husky": "^9.1.7",
+        "lint-staged": "^16.1.0",
+        "prettier": "^3.5.3",
+      },
+    },
+    "packages/ozean": {
       "name": "ozean",
+      "version": "0.2.0",
       "dependencies": {
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.2",
@@ -11,9 +19,6 @@
       "devDependencies": {
         "@types/bun": "latest",
         "@types/reflect-metadata": "^0.1.0",
-        "husky": "^9.1.7",
-        "lint-staged": "^16.1.0",
-        "prettier": "^3.5.3",
         "rimraf": "^6.0.1",
       },
       "peerDependencies": {
@@ -119,6 +124,8 @@
     "nano-spawn": ["nano-spawn@1.0.2", "", {}, "sha512-21t+ozMQDAL/UGgQVBbZ/xXvNO10++ZPuTmKRO8k9V3AClVRht49ahtDjfY8l1q6nSHOrE5ASfthzH3ol6R/hg=="],
 
     "onetime": ["onetime@7.0.0", "", { "dependencies": { "mimic-function": "^5.0.0" } }, "sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ=="],
+
+    "ozean": ["ozean@workspace:packages/ozean"],
 
     "package-json-from-dist": ["package-json-from-dist@1.0.1", "", {}, "sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw=="],
 

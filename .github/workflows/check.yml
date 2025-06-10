@@ -9,19 +9,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 🧱 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Bun
+      - name: ⚡ Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: bun install
 
-      - name: Check formatting
+      - name: 🎨 Check formatting
         run: bun run prettier:check
 
-      - name: Build project
+      - name: 🏗️ Build project
         run: bun run build
