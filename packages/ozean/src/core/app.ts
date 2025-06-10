@@ -3,7 +3,10 @@ import { matchRoute } from '../router';
 import { ModuleRef } from './module-ref';
 import type { IModuleRef } from '../interfaces/module-ref.interface';
 import { MIDDLEWARE_METADATA_KEY } from '../decorators/use-middleware.decorator';
+import { PIPES_METADATA_KEY } from '../decorators/use-pipes.decorator';
 import type { Middleware, NextFunction } from '../interfaces/middleware.interface';
+import type { PipeTransform, ArgumentMetadata } from '../interfaces/pipe.interface';
+import { BadRequestException, HttpException } from '../exceptions/http-exception';
 
 export class App {
   private moduleRefs = new Map<Function, IModuleRef>();
@@ -153,46 +156,53 @@ export class App {
                 else if (contentType?.includes('application/x-www-form-urlencoded'))
                   requestBody = Object.fromEntries(new URLSearchParams(await req.text()));
               } catch (e) {
-                console.error('Failed to parse request body:', e);
-                return new Response('Invalid request body', { status: 400 });
+                throw new BadRequestException(
+                  'Invalid request body. Malformed JSON or other parsing error.'
+                );
               }
             }
 
             const handler = (instance as any)[handlerName];
+
+            const pipesOnMethod =
+              Reflect.getMetadata(PIPES_METADATA_KEY, instance as object, handlerName) || [];
+            const pipeInstances = pipesOnMethod.map((p: any) => resolve(p, controllerContext));
+
+            const paramTypes =
+              Reflect.getMetadata('design:paramtypes', instance as object, handlerName) || [];
             const paramMeta: any[] =
               Reflect.getMetadata('custom:param', instance as object, handlerName) || [];
             const args = new Array(handler.length);
+
             for (let i = 0; i < args.length; i++) {
               const meta = paramMeta[i];
+              let value: any;
+
               if (meta) {
                 if (meta.type === 'query')
-                  args[i] = Object.fromEntries(url.searchParams.entries())[meta.key];
-                else if (meta.type === 'param') args[i] = params[meta.key];
+                  value = Object.fromEntries(url.searchParams.entries())[meta.key];
+                else if (meta.type === 'param') value = params[meta.key];
                 else if (meta.type === 'body')
-                  args[i] = meta.key ? requestBody[meta.key] : requestBody;
-              } else args[i] = undefined;
+                  value = meta.key ? requestBody[meta.key] : requestBody;
+              }
+
+              const argumentMetadata: ArgumentMetadata = {
+                type: meta?.type,
+                metatype: paramTypes[i],
+                data: meta?.key,
+              };
+
+              for (const pipe of pipeInstances as PipeTransform[]) {
+                value = await pipe.transform(value, argumentMetadata);
+              }
+              args[i] = value;
             }
 
-            try {
-              const result = await handler.apply(instance, args);
-              if (result instanceof Response) return result;
-              if (typeof result === 'object' && result !== null) return Response.json(result);
-              if (result === undefined || result === null)
-                return new Response(null, { status: 204 });
-              return new Response(String(result));
-            } catch (handlerError: any) {
-              console.error(
-                `Error in handler ${controllerClassToken.name}.${handlerName}:`,
-                handlerError
-              );
-              return new Response(
-                JSON.stringify({ message: 'Internal Server Error', error: handlerError.message }),
-                {
-                  status: 500,
-                  headers: { 'Content-Type': 'application/json' },
-                }
-              );
-            }
+            const result = await handler.apply(instance, args);
+            if (result instanceof Response) return result;
+            if (typeof result === 'object' && result !== null) return Response.json(result);
+            if (result === undefined || result === null) return new Response(null, { status: 204 });
+            return new Response(String(result));
           };
 
           const chain = middlewareInstances
@@ -200,9 +210,24 @@ export class App {
             .reduce((next, middleware) => () => middleware.use(req, next), finalHandler);
 
           return await chain();
-        } catch (serverError: any) {
-          console.error('Unhandled error during fetch processing:', serverError);
-          return new Response('Internal Server Error', { status: 500 });
+        } catch (error: any) {
+          if (error instanceof HttpException) {
+            console.error(`HTTP Exception Caught: ${error.statusCode} - ${error.message}`);
+            return new Response(
+              typeof error.response === 'string' ? error.response : JSON.stringify(error.response),
+              {
+                status: error.statusCode,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            );
+          }
+
+          console.error('Unhandled error during fetch processing:', error);
+          const errorResponse = { message: 'Internal Server Error', error: error.message };
+          return new Response(JSON.stringify(errorResponse), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
       },
       error: (error: Error) => {
@@ -210,6 +235,7 @@ export class App {
         return new Response('Server error', { status: 500 });
       },
     });
+
     console.log(`🌊 App is running on http://localhost:${port}`);
   }
 }
