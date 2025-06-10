@@ -1,4 +1,4 @@
-import { IModuleRef, ModuleMetadata } from 'interfaces/module-ref.interface';
+import type { IModuleRef, ModuleMetadata } from 'interfaces/module-ref.interface';
 
 export class ModuleRef implements IModuleRef {
   public readonly metadata: ModuleMetadata;
