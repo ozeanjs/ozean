@@ -11,7 +11,7 @@ This is the official Command-Line Interface (CLI) for the **OzeanJs Framework**.
 To use the Ozean CLI, you can install it globally on your machine using Bun:
 
 ```bash
-bun install -g @ozean/cli
+bun install -g ozean-cli
 ```
 
 After installation, you will be able to use the `ozean` command from anywhere in your terminal.
