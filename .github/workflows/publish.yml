@@ -29,7 +29,14 @@ jobs:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org/'
 
-      - name: 🚀 Publish to npm
-        run: npm publish --access public --filter ./packages/*
+      - name: 🚀 Publish 'ozean' to npm
+        working-directory: ./packages/ozean
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: 🚀 Publish '@ozean/cli' to npm
+        working-directory: ./packages/ozean-cli
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
