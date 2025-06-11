@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://ozeanjs.com">
-    <img src="./docs/assets/logo.png" alt="OzeanJs" width="150">
+    <img src="./docs/src/assets/logo.svg" alt="OzeanJs" width="150">
   </a>
 </p>
 
