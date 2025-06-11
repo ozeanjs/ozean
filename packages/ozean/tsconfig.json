@@ -9,9 +9,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
-    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "noEmit": true,
 
     // Best practices
     "strict": true,
