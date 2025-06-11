@@ -1,6 +1,6 @@
 {
   "name": "ozean",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "A modern, simple, and high-performance web framework for Bun, inspired by Angular's architecture.",
   "keywords": [
     "ozean",
