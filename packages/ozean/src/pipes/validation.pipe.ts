@@ -1,4 +1,4 @@
-import { PipeTransform, ArgumentMetadata } from '../interfaces/pipe.interface';
+import type { PipeTransform, ArgumentMetadata } from '../interfaces/pipe.interface';
 import { Injectable } from '../decorators/injectable';
 import { plainToInstance } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
