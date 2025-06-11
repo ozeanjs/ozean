@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://ozeanjs.com">
-    <img src="https://raw.githubusercontent.com/ozeanjs/ozean/refs/heads/develop/docs/src/assets/logo.svg" alt="OzeanJs" width="150">
+    <img src="./docs/src/assets/logo.svg" alt="OzeanJs" width="150">
   </a>
 </p>
 
