@@ -43,6 +43,7 @@ export default defineConfig({
 						{ label: 'Controllers', slug: 'docs/overview/controllers' },
 						{ label: 'Providers', slug: 'docs/overview/providers' },
 						{ label: 'Pipes', slug: 'docs/overview/pipes' },
+						{ label: 'Exception Handling', slug: 'docs/overview/exception-handling' },
 					],
 				},
 				{

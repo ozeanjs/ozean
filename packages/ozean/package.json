@@ -43,7 +43,7 @@
     "prepublishOnly": "cp ../../README.md .",
     "dev": "bun run examples/example.ts",
     "clean": "rimraf ./dist",
-    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --outDir dist",
+    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --outDir ./dist",
     "build:js": "bun build ./src/index.ts --outdir ./dist --target bun --format esm --format cjs --sourcemap=external",
     "build": "bun run clean && bun run build:types && bun run build:js",
     "test": "bun test"
