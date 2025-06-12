@@ -23,5 +23,8 @@ jobs:
       - name: 🎨 Check formatting
         run: bun run prettier:check
 
+      - name: 🧪 Unit test
+        run: bun run test
+
       - name: 🏗️ Build project
         run: bun run build

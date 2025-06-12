@@ -6,21 +6,33 @@ import { MIDDLEWARE_METADATA_KEY } from '../decorators/use-middleware.decorator'
 import { PIPES_METADATA_KEY } from '../decorators/use-pipes.decorator';
 import type { Middleware, NextFunction } from '../interfaces/middleware.interface';
 import type { PipeTransform, ArgumentMetadata } from '../interfaces/pipe.interface';
-import { BadRequestException, HttpException } from '../exceptions/http-exception';
+import { BadRequestException } from '../exceptions/http-exception';
+import type { ArgumentsHost, ExceptionFilter } from 'interfaces/exception-filter.interface';
+import { BaseExceptionFilter } from 'filters/base-exception-filter';
+import { CATCH_METADATA_KEY } from 'decorators/catch.decorator';
+import { FILTERS_METADATA_KEY } from 'decorators/use-filters.decorator';
 
 export class App {
+  private globalFilters: (new (...args: any[]) => ExceptionFilter)[] = [];
+  private readonly baseExceptionFilter: BaseExceptionFilter;
   private moduleRefs = new Map<Function, IModuleRef>();
   private rootModuleRef!: IModuleRef;
   private globalMiddlewares: (new (...args: any[]) => Middleware)[] = [];
   private globalModuleRefs = new Set<IModuleRef>();
 
   constructor(private rootModuleClass: Function) {
+    this.baseExceptionFilter = new BaseExceptionFilter();
     console.log(`Initializing app with root module: ${this.rootModuleClass.name}`);
     this._compileModule(this.rootModuleClass);
     if (!this.rootModuleRef) {
       throw new Error('Root module could not be compiled.');
     }
     this._bootstrapInstances(this.rootModuleRef);
+  }
+
+  useGlobalFilters(...filters: (new (...args: any[]) => ExceptionFilter)[]): this {
+    this.globalFilters.push(...filters);
+    return this;
   }
 
   use(...middlewares: (new (...args: any[]) => Middleware)[]): this {
@@ -104,15 +116,22 @@ export class App {
     Bun.serve({
       port,
       fetch: async (req) => {
+        let matched: any;
+        let controllerContext: any;
+        let controllerClassToken: any;
+        let handlerName: any;
+
         try {
           const url = new URL(req.url);
-          const matched = matchRoute(req.method, url.pathname);
+          matched = matchRoute(req.method, url.pathname);
 
           if (!matched) {
             return new Response('Not Found', { status: 404 });
           }
 
-          const { handlerName, params, controllerClassToken } = matched;
+          const { params } = matched;
+          handlerName = matched.handlerName;
+          controllerClassToken = matched.controllerClassToken;
 
           const controllerModuleRef = getControllerModuleRef(controllerClassToken);
           if (!controllerModuleRef) {
@@ -121,7 +140,7 @@ export class App {
             return new Response(errorMessage, { status: 500 });
           }
 
-          const controllerContext = createResolutionContext(controllerModuleRef, globalModuleRefs);
+          controllerContext = createResolutionContext(controllerModuleRef, globalModuleRefs);
 
           const routeMiddlewares =
             Reflect.getMetadata(
@@ -211,23 +230,42 @@ export class App {
 
           return await chain();
         } catch (error: any) {
-          if (error instanceof HttpException) {
-            console.error(`HTTP Exception Caught: ${error.statusCode} - ${error.message}`);
-            return new Response(
-              typeof error.response === 'string' ? error.response : JSON.stringify(error.response),
-              {
-                status: error.statusCode,
-                headers: { 'Content-Type': 'application/json' },
-              }
-            );
+          const host: ArgumentsHost = { getRequest: <Request>() => req as Request };
+          let routeFilters: any[] = [];
+          let controllerFilters: any[] = [];
+          if (controllerClassToken && handlerName) {
+            controllerFilters =
+              Reflect.getMetadata(FILTERS_METADATA_KEY, controllerClassToken) || [];
+            if (handlerName) {
+              routeFilters =
+                Reflect.getMetadata(
+                  FILTERS_METADATA_KEY,
+                  controllerClassToken.prototype,
+                  handlerName
+                ) || [];
+            }
+          }
+          const allFilterClasses = [...this.globalFilters, ...controllerFilters, ...routeFilters];
+
+          if (!controllerContext) {
+            controllerContext = createResolutionContext(this.rootModuleRef, this.globalModuleRefs);
           }
 
-          console.error('Unhandled error during fetch processing:', error);
-          const errorResponse = { message: 'Internal Server Error', error: error.message };
-          return new Response(JSON.stringify(errorResponse), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          for (const FilterClass of allFilterClasses) {
+            const exceptionTypesToCatch =
+              Reflect.getMetadata(CATCH_METADATA_KEY, FilterClass) || [];
+            const canCatch =
+              exceptionTypesToCatch.length === 0 ||
+              exceptionTypesToCatch.some((type: any) => error instanceof type);
+            if (canCatch) {
+              console.log(
+                `Using specific filter for ${error.constructor.name}: ${FilterClass.name}`
+              );
+              const filterInstance = resolve(FilterClass, controllerContext);
+              return (filterInstance as ExceptionFilter).catch(error, host);
+            }
+          }
+          return this.baseExceptionFilter.catch(error, host);
         }
       },
       error: (error: Error) => {
