@@ -10,11 +10,14 @@ export { UseMiddleware } from './decorators/use-middleware.decorator';
 export { UsePipes } from './decorators/use-pipes.decorator';
 export { UseFilters } from './decorators/use-filters.decorator';
 export { Catch } from './decorators/catch.decorator';
+export { UseGuards } from './decorators/use-guards.decorator';
+export { Reflector } from './core/reflector.service';
 export { ValidationPipe } from './pipes/validation.pipe';
 export { HttpStatus } from './common/http-status.enum';
 export type { Middleware, NextFunction } from './interfaces/middleware.interface';
 export type { PipeTransform, ArgumentMetadata } from './interfaces/pipe.interface';
 export type { ExceptionFilter, ArgumentsHost } from './interfaces/exception-filter.interface';
+export type { CanActivate, ExecutionContext } from './interfaces/can-activate.interface';
 export {
   HttpException,
   BadRequestException,

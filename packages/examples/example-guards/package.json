@@ -1,0 +1,12 @@
+{
+  "name": "example-guards",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "bun --hot src/main.ts"
+  },
+  "dependencies": {
+    "ozean": "workspace:*",
+    "reflect-metadata": "^0.2.2"
+  }
+}
