@@ -226,7 +226,7 @@ describe('App End-to-End (E2E) Test Suite', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(validData),
       });
-      // หมายเหตุ: โดยปกติ POST สำหรับสร้างข้อมูลจะคืน 201 Created แต่ในตัวอย่างนี้ framework ของเราคืน 200 OK
+
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ id: 99, ...validData });
     });
