@@ -122,7 +122,7 @@ export class App {
     const globalModuleRefs = this.globalModuleRefs;
     const globalGuardClasses = this.globalGuards;
 
-    Bun.serve({
+    const server = Bun.serve({
       port,
       fetch: async (req) => {
         let matched: any;
@@ -311,5 +311,7 @@ export class App {
     });
 
     console.log(`🌊 App is running on http://localhost:${port}`);
+
+    return server;
   }
 }
