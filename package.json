@@ -2,6 +2,7 @@
   "private": true,
   "workspaces": [
     "packages/*",
+    "packages/examples/*",
     "docs"
   ],
   "lint-staged": {
@@ -15,18 +16,20 @@
     "build": "bun run ozean:build && bun run ozean-cli:build && bun run docs:build",
     "test": "bun run ozean:test",
     "bump": "bun run ozean:bump",
-    "ozean:build": "cd packages/ozean && bun run build",
+    "ozean:build": "bun --cwd=packages/ozean run build",
     "ozean:prettier:check": "prettier -c \"packages/ozean/src/**/*.ts\"",
     "ozean:prettier:write": "prettier --write \"packages/ozean/src/**/*.ts\"",
-    "ozean:test": "cd packages/ozean && bun run test",
+    "ozean:test": "bun --cwd=packages/ozean run test",
     "ozean-cli:prettier:check": "prettier -c \"packages/ozean-cli/src/**/*.ts\"",
     "ozean-cli:prettier:write": "prettier --write \"packages/ozean-cli/src/**/*.ts\"",
-    "ozean-cli:build": "cd packages/ozean-cli && bun run build",
-    "docs:dev": "cd docs && bun run dev",
-    "docs:build": "cd docs && bun run build",
+    "ozean-cli:build": "bun --cwd=packages/ozean-cli run build",
+    "docs:dev": "bun --cwd=docs run dev",
+    "docs:build": "bun --cwd=docs run build",
     "bump:patch": "bun run bump-versions.ts patch",
     "bump:minor": "bun run bump-versions.ts minor",
-    "bump:major": "bun run bump-versions.ts major"
+    "bump:major": "bun run bump-versions.ts major",
+    "example:example-exception-filter": "bun run --cwd=packages/examples/example-exception-filter dev",
+    "example:example-guards": "bun run --cwd=packages/examples/example-guards dev"
   },
   "devDependencies": {
     "husky": "^9.1.7",
