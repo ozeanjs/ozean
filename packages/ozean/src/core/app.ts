@@ -6,11 +6,13 @@ import { MIDDLEWARE_METADATA_KEY } from '../decorators/use-middleware.decorator'
 import { PIPES_METADATA_KEY } from '../decorators/use-pipes.decorator';
 import type { Middleware, NextFunction } from '../interfaces/middleware.interface';
 import type { PipeTransform, ArgumentMetadata } from '../interfaces/pipe.interface';
-import { BadRequestException } from '../exceptions/http-exception';
+import { BadRequestException, ForbiddenException } from '../exceptions/http-exception';
 import type { ArgumentsHost, ExceptionFilter } from 'interfaces/exception-filter.interface';
 import { BaseExceptionFilter } from 'filters/base-exception-filter';
 import { CATCH_METADATA_KEY } from 'decorators/catch.decorator';
 import { FILTERS_METADATA_KEY } from 'decorators/use-filters.decorator';
+import type { CanActivate, ExecutionContext } from 'interfaces/can-activate.interface';
+import { GUARDS_METADATA_KEY } from 'decorators/use-guards.decorator';
 
 export class App {
   private globalFilters: (new (...args: any[]) => ExceptionFilter)[] = [];
@@ -19,6 +21,7 @@ export class App {
   private rootModuleRef!: IModuleRef;
   private globalMiddlewares: (new (...args: any[]) => Middleware)[] = [];
   private globalModuleRefs = new Set<IModuleRef>();
+  private globalGuards: (new (...args: any[]) => CanActivate)[] = [];
 
   constructor(private rootModuleClass: Function) {
     this.baseExceptionFilter = new BaseExceptionFilter();
@@ -28,6 +31,11 @@ export class App {
       throw new Error('Root module could not be compiled.');
     }
     this._bootstrapInstances(this.rootModuleRef);
+  }
+
+  useGlobalGuards(...guards: (new (...args: any[]) => CanActivate)[]): this {
+    this.globalGuards.push(...guards);
+    return this;
   }
 
   useGlobalFilters(...filters: (new (...args: any[]) => ExceptionFilter)[]): this {
@@ -112,6 +120,7 @@ export class App {
 
     const globalMiddlewareClasses = this.globalMiddlewares;
     const globalModuleRefs = this.globalModuleRefs;
+    const globalGuardClasses = this.globalGuards;
 
     Bun.serve({
       port,
@@ -161,6 +170,33 @@ export class App {
           );
 
           const finalHandler: NextFunction = async (): Promise<Response> => {
+            const handlerMethod = (controllerClassToken.prototype as any)[handlerName!];
+            const executionContext: ExecutionContext = {
+              getClass: () => controllerClassToken,
+              getHandler: () => handlerMethod,
+              getRequest: <Request>() => req as Request,
+            };
+
+            const controllerGuards =
+              Reflect.getMetadata(GUARDS_METADATA_KEY, controllerClassToken) || [];
+            const routeGuards =
+              Reflect.getMetadata(
+                GUARDS_METADATA_KEY,
+                controllerClassToken.prototype,
+                handlerName
+              ) || [];
+            const allGuardClasses = [...globalGuardClasses, ...controllerGuards, ...routeGuards];
+            const guardInstances: CanActivate[] = allGuardClasses.map((g) =>
+              resolve(g, controllerContext)
+            );
+
+            for (const guard of guardInstances) {
+              const canActivate = await guard.canActivate(executionContext);
+              if (!canActivate) {
+                throw new ForbiddenException('Access denied by guard.');
+              }
+            }
+
             const instance = resolve(controllerClassToken as any, controllerContext);
 
             let requestBody: any = {};

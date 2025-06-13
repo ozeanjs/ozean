@@ -11,7 +11,7 @@ import {
   type ArgumentsHost,
   Catch,
   HttpStatus,
-} from '../../src';
+} from 'ozean';
 
 import 'reflect-metadata';
 
