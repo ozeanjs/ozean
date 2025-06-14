@@ -3,7 +3,8 @@
   "workspaces": [
     "packages/*",
     "packages/examples/*",
-    "docs"
+    "docs",
+    "bench"
   ],
   "lint-staged": {
     "packages/ozean/src/**/*.ts": "prettier -c",

@@ -17,6 +17,7 @@ export interface MatchedRouteInfo {
   controllerClassToken: Function;
   handlerName: string;
   params: Record<string, string>;
+  routePath: string;
 }
 
 export function matchRoute(method: string, pathname: string): MatchedRouteInfo | null {
@@ -42,7 +43,12 @@ export function matchRoute(method: string, pathname: string): MatchedRouteInfo |
     if (match && method.toUpperCase() === route.method.toUpperCase()) {
       const params: Record<string, string> = {};
       keys.forEach((key, i) => (params[key] = decodeURIComponent(match[+i + 1]!)));
-      return { controllerClassToken: route.target, handlerName: route.handlerName, params };
+      return {
+        controllerClassToken: route.target,
+        handlerName: route.handlerName,
+        params,
+        routePath: fullPath,
+      };
     }
   }
 
