@@ -1,0 +1,8 @@
+{
+  "name": "bench-hello",
+  "private": true,
+  "dependencies": {
+    "ozean": "workspace:*",
+    "reflect-metadata": "^0.2.2"
+  }
+}

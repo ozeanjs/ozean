@@ -1,4 +1,4 @@
-import { resolve, createResolutionContext } from './container';
+import { resolve, createResolutionContext, type ResolutionContext } from './container';
 import { matchRoute } from '../router';
 import { ModuleRef } from './module-ref';
 import type { IModuleRef } from '../interfaces/module-ref.interface';
@@ -13,6 +13,9 @@ import { CATCH_METADATA_KEY } from 'decorators/catch.decorator';
 import { FILTERS_METADATA_KEY } from 'decorators/use-filters.decorator';
 import type { CanActivate, ExecutionContext } from 'interfaces/can-activate.interface';
 import { GUARDS_METADATA_KEY } from 'decorators/use-guards.decorator';
+import type { RouteExecutionPlan } from 'interfaces/execution-plan.interface';
+import { getMetadataArgsStorage } from 'metadata/storage';
+import { HttpStatus } from 'common/http-status.enum';
 
 export class App {
   private globalFilters: (new (...args: any[]) => ExceptionFilter)[] = [];
@@ -22,15 +25,16 @@ export class App {
   private globalMiddlewares: (new (...args: any[]) => Middleware)[] = [];
   private globalModuleRefs = new Set<IModuleRef>();
   private globalGuards: (new (...args: any[]) => CanActivate)[] = [];
+  private routeCache = new Map<string, RouteExecutionPlan>();
 
   constructor(private rootModuleClass: Function) {
     this.baseExceptionFilter = new BaseExceptionFilter();
     console.log(`Initializing app with root module: ${this.rootModuleClass.name}`);
-    this._compileModule(this.rootModuleClass);
+    this._compileModules();
     if (!this.rootModuleRef) {
       throw new Error('Root module could not be compiled.');
     }
-    this._bootstrapInstances(this.rootModuleRef);
+    this._bootstrapInstances();
   }
 
   useGlobalGuards(...guards: (new (...args: any[]) => CanActivate)[]): this {
@@ -48,268 +52,216 @@ export class App {
     return this;
   }
 
-  private _compileModule(moduleClass: Function): IModuleRef {
-    if (this.moduleRefs.has(moduleClass)) {
-      return this.moduleRefs.get(moduleClass)!;
-    }
-
-    const moduleRef = new ModuleRef(moduleClass);
-    this.moduleRefs.set(moduleClass, moduleRef);
-
-    if (moduleRef.isGlobal) {
-      this.globalModuleRefs.add(moduleRef);
-    }
-
-    if (moduleClass === (this as any).rootModuleClass) {
-      (this as any).rootModuleRef = moduleRef;
-    }
-
-    if (moduleRef.metadata.imports) {
-      for (const importedModuleClass of moduleRef.metadata.imports) {
-        if (typeof importedModuleClass === 'function' && importedModuleClass.prototype) {
-          const importedRef = this._compileModule(importedModuleClass);
-          moduleRef.addImport(importedRef);
-        } else {
-          console.warn(
-            `Warning: Invalid entry in 'imports' array of module ${moduleClass.name}. Entry is not a class constructor.`,
-            importedModuleClass
-          );
+  private _compileModules(): void {
+    const compile = (moduleClass: Function): IModuleRef => {
+      if (this.moduleRefs.has(moduleClass)) return this.moduleRefs.get(moduleClass)!;
+      const moduleRef = new ModuleRef(moduleClass);
+      this.moduleRefs.set(moduleClass, moduleRef);
+      if (moduleRef.isGlobal) this.globalModuleRefs.add(moduleRef);
+      if (moduleClass === this.rootModuleClass) this.rootModuleRef = moduleRef;
+      if (moduleRef.metadata.imports) {
+        for (const importedModuleClass of moduleRef.metadata.imports) {
+          if (typeof importedModuleClass === 'function' && importedModuleClass.prototype) {
+            moduleRef.addImport(compile(importedModuleClass));
+          }
         }
       }
-    }
-    return moduleRef;
+      return moduleRef;
+    };
+    compile(this.rootModuleClass);
   }
 
-  private _bootstrapInstances(moduleRef: IModuleRef, processed = new Set<IModuleRef>()): void {
-    if (processed.has(moduleRef)) {
-      return;
+  private _bootstrapInstances(): void {
+    for (const moduleRef of this.moduleRefs.values()) {
+      const context = createResolutionContext(moduleRef, this.globalModuleRefs);
+      if (moduleRef.metadata.providers)
+        for (const ProviderClass of moduleRef.metadata.providers)
+          if (typeof ProviderClass === 'function' && ProviderClass.prototype)
+            resolve(ProviderClass as any, context);
+      if (moduleRef.metadata.controllers)
+        for (const ControllerClass of moduleRef.metadata.controllers)
+          if (typeof ControllerClass === 'function' && ControllerClass.prototype)
+            resolve(ControllerClass as any, context);
     }
-    processed.add(moduleRef);
+  }
 
-    for (const importedRef of moduleRef.imports) {
-      this._bootstrapInstances(importedRef, processed);
-    }
+  private _buildRouteCache(): void {
+    console.log('Building route cache...');
+    const routeMetadata = getMetadataArgsStorage().routes;
 
-    const currentContext = createResolutionContext(moduleRef, this.globalModuleRefs);
+    for (const route of routeMetadata) {
+      const { target: controllerToken, handlerName, method, path: routePath } = route;
+      const controllerPath =
+        getMetadataArgsStorage().controllers[controllerToken as any]?.path || '/';
+      const fullPath =
+        (controllerPath === '/' ? '' : controllerPath) +
+        (routePath.startsWith('/') ? '' : '/') +
+        routePath;
+      const cacheKey = `${method}:${fullPath}`; // e.g., "GET:/users/:id"
 
-    if (moduleRef.metadata.providers) {
-      for (const ProviderClass of moduleRef.metadata.providers) {
-        if (typeof ProviderClass === 'function' && ProviderClass.prototype) {
-          resolve(ProviderClass as any, currentContext);
-        }
-      }
+      const moduleRef = this.getModuleRefByController(controllerToken);
+      if (!moduleRef) continue;
+
+      const context = createResolutionContext(moduleRef, this.globalModuleRefs);
+
+      // Pre-resolve middlewares, guards, pipes, filters
+      const routeMiddlewares =
+        Reflect.getMetadata(MIDDLEWARE_METADATA_KEY, controllerToken.prototype, handlerName) || [];
+      const controllerMiddlewares =
+        Reflect.getMetadata(MIDDLEWARE_METADATA_KEY, controllerToken) || [];
+      const middlewareInstances = [
+        ...this.globalMiddlewares,
+        ...controllerMiddlewares,
+        ...routeMiddlewares,
+      ].map((m) => resolve(m, context) as Middleware);
+
+      const routeGuards =
+        Reflect.getMetadata(GUARDS_METADATA_KEY, controllerToken.prototype, handlerName) || [];
+      const controllerGuards = Reflect.getMetadata(GUARDS_METADATA_KEY, controllerToken) || [];
+      const guardInstances = [...this.globalGuards, ...controllerGuards, ...routeGuards].map(
+        (g) => resolve(g, context) as CanActivate
+      );
+
+      const pipeClasses =
+        Reflect.getMetadata(PIPES_METADATA_KEY, controllerToken.prototype, handlerName) || [];
+      const pipeInstances = pipeClasses.map((p: any) => resolve(p, context));
+
+      const routeFilters =
+        Reflect.getMetadata(FILTERS_METADATA_KEY, controllerToken.prototype, handlerName) || [];
+      const controllerFilters = Reflect.getMetadata(FILTERS_METADATA_KEY, controllerToken) || [];
+      const filterInstances = [...this.globalFilters, ...controllerFilters, ...routeFilters].map(
+        (f) => resolve(f, context) as ExceptionFilter
+      );
+
+      const paramMeta =
+        Reflect.getMetadata('custom:param', controllerToken.prototype, handlerName) || [];
+      const paramTypes =
+        Reflect.getMetadata('design:paramtypes', controllerToken.prototype, handlerName) || [];
+
+      this.routeCache.set(cacheKey, {
+        controllerToken,
+        handlerName,
+        middlewareInstances,
+        guardInstances,
+        pipeInstances,
+        filterInstances,
+        paramMeta,
+        paramTypes,
+      });
     }
-    if (moduleRef.metadata.controllers) {
-      for (const ControllerClass of moduleRef.metadata.controllers) {
-        if (typeof ControllerClass === 'function' && ControllerClass.prototype) {
-          resolve(ControllerClass as any, currentContext);
-        }
-      }
+    console.log(`Route cache built with ${this.routeCache.size} entries.`);
+  }
+
+  private getModuleRefByController(controllerToken: Function): IModuleRef | undefined {
+    for (const mRef of this.moduleRefs.values()) {
+      if (mRef.metadata.controllers?.includes(controllerToken)) return mRef;
     }
+    return undefined;
   }
 
   listen(port: number) {
-    const getControllerModuleRef = (controllerClass: Function): IModuleRef | undefined => {
-      for (const mRef of this.moduleRefs.values()) {
-        if (mRef.metadata.controllers?.includes(controllerClass)) {
-          return mRef;
-        }
-      }
-      return undefined;
-    };
+    this._buildRouteCache();
 
-    const globalMiddlewareClasses = this.globalMiddlewares;
-    const globalModuleRefs = this.globalModuleRefs;
-    const globalGuardClasses = this.globalGuards;
-
-    Bun.serve({
+    const server = Bun.serve({
       port,
       fetch: async (req) => {
-        let matched: any;
-        let controllerContext: any;
-        let controllerClassToken: any;
-        let handlerName: any;
+        let executionPlan: RouteExecutionPlan | undefined;
+        let context: ResolutionContext | undefined;
 
         try {
           const url = new URL(req.url);
-          matched = matchRoute(req.method, url.pathname);
+          const matched = matchRoute(req.method, url.pathname);
+          if (!matched) return new Response('Not Found', { status: HttpStatus.NOT_FOUND });
 
-          if (!matched) {
-            return new Response('Not Found', { status: 404 });
+          const cacheKey = `${req.method}:${matched.routePath}`; // router needs to return the matched path pattern
+          executionPlan = this.routeCache.get(cacheKey);
+
+          if (!executionPlan) {
+            console.error(`Execution plan not found for key: ${cacheKey}`);
+            return new Response(`Internal Server Error: Route handler not configured correctly.`, {
+              status: HttpStatus.INTERNAL_SERVER_ERROR,
+            });
           }
 
-          const { params } = matched;
-          handlerName = matched.handlerName;
-          controllerClassToken = matched.controllerClassToken;
+          const moduleRef = this.getModuleRefByController(executionPlan.controllerToken);
+          if (!moduleRef)
+            return new Response(`Internal Server Error: Controller module not found.`, {
+              status: HttpStatus.INTERNAL_SERVER_ERROR,
+            });
 
-          const controllerModuleRef = getControllerModuleRef(controllerClassToken);
-          if (!controllerModuleRef) {
-            const errorMessage = `Internal Server Error: Controller module not found for controller ${controllerClassToken.name}`;
-            console.error(errorMessage);
-            return new Response(errorMessage, { status: 500 });
-          }
+          context = createResolutionContext(moduleRef, this.globalModuleRefs);
 
-          controllerContext = createResolutionContext(controllerModuleRef, globalModuleRefs);
-
-          const routeMiddlewares =
-            Reflect.getMetadata(
-              MIDDLEWARE_METADATA_KEY,
-              controllerClassToken.prototype,
-              handlerName
-            ) || [];
-          const controllerMiddlewares =
-            Reflect.getMetadata(MIDDLEWARE_METADATA_KEY, controllerClassToken) || [];
-          const allMiddlewareClasses = [
-            ...globalMiddlewareClasses,
-            ...controllerMiddlewares,
-            ...routeMiddlewares,
-          ];
-
-          const middlewareInstances = allMiddlewareClasses.map(
-            (mwClass) => resolve(mwClass, controllerContext) as Middleware
-          );
-
-          const finalHandler: NextFunction = async (): Promise<Response> => {
-            const handlerMethod = (controllerClassToken.prototype as any)[handlerName!];
+          const finalHandler: NextFunction = async () => {
             const executionContext: ExecutionContext = {
-              getClass: () => controllerClassToken,
-              getHandler: () => handlerMethod,
+              getClass: () => executionPlan!.controllerToken as new (...args: any[]) => any,
+              getHandler: () =>
+                (executionPlan!.controllerToken.prototype as any)[executionPlan!.handlerName],
               getRequest: <Request>() => req as Request,
             };
 
-            const controllerGuards =
-              Reflect.getMetadata(GUARDS_METADATA_KEY, controllerClassToken) || [];
-            const routeGuards =
-              Reflect.getMetadata(
-                GUARDS_METADATA_KEY,
-                controllerClassToken.prototype,
-                handlerName
-              ) || [];
-            const allGuardClasses = [...globalGuardClasses, ...controllerGuards, ...routeGuards];
-            const guardInstances: CanActivate[] = allGuardClasses.map((g) =>
-              resolve(g, controllerContext)
-            );
-
-            for (const guard of guardInstances) {
-              const canActivate = await guard.canActivate(executionContext);
-              if (!canActivate) {
-                throw new ForbiddenException('Access denied by guard.');
-              }
+            for (const guard of executionPlan!.guardInstances) {
+              if (!(await guard.canActivate(executionContext))) throw new ForbiddenException();
             }
 
-            const instance = resolve(controllerClassToken as any, controllerContext);
-
-            let requestBody: any = {};
-            if (
-              req.method !== 'GET' &&
-              req.method !== 'HEAD' &&
-              req.headers.get('content-length') !== '0'
-            ) {
+            const instance = resolve(executionPlan!.controllerToken as any, context!);
+            let body: any = {};
+            if (req.method !== 'GET' && req.method !== 'HEAD')
               try {
-                const contentType = req.headers.get('content-type');
-                if (contentType?.includes('application/json')) requestBody = await req.json();
-                else if (contentType?.includes('application/x-www-form-urlencoded'))
-                  requestBody = Object.fromEntries(new URLSearchParams(await req.text()));
+                if (req.headers.get('content-type')?.includes('json')) body = await req.json();
               } catch (e) {
-                throw new BadRequestException(
-                  'Invalid request body. Malformed JSON or other parsing error.'
-                );
+                throw new BadRequestException('Invalid body');
               }
-            }
 
-            const handler = (instance as any)[handlerName];
-
-            const pipesOnMethod =
-              Reflect.getMetadata(PIPES_METADATA_KEY, instance as object, handlerName) || [];
-            const pipeInstances = pipesOnMethod.map((p: any) => resolve(p, controllerContext));
-
-            const paramTypes =
-              Reflect.getMetadata('design:paramtypes', instance as object, handlerName) || [];
-            const paramMeta: any[] =
-              Reflect.getMetadata('custom:param', instance as object, handlerName) || [];
-            const args = new Array(handler.length);
-
+            const args = new Array(executionPlan!.paramTypes.length);
             for (let i = 0; i < args.length; i++) {
-              const meta = paramMeta[i];
-              let value: any;
-
+              const meta = executionPlan!.paramMeta[i];
+              let val: any;
               if (meta) {
-                if (meta.type === 'query')
-                  value = Object.fromEntries(url.searchParams.entries())[meta.key];
-                else if (meta.type === 'param') value = params[meta.key];
-                else if (meta.type === 'body')
-                  value = meta.key ? requestBody[meta.key] : requestBody;
+                if (meta.type === 'query') val = Object.fromEntries(url.searchParams)[meta.key];
+                else if (meta.type === 'param') val = matched.params[meta.key];
+                else if (meta.type === 'body') val = meta.key ? body[meta.key] : body;
               }
-
-              const argumentMetadata: ArgumentMetadata = {
+              const argMeta: ArgumentMetadata = {
                 type: meta?.type,
-                metatype: paramTypes[i],
+                metatype: executionPlan!.paramTypes[i],
                 data: meta?.key,
               };
-
-              for (const pipe of pipeInstances as PipeTransform[]) {
-                value = await pipe.transform(value, argumentMetadata);
-              }
-              args[i] = value;
+              for (const pipe of executionPlan!.pipeInstances)
+                val = await pipe.transform(val, argMeta);
+              args[i] = val;
             }
-
-            const result = await handler.apply(instance, args);
+            const result = await (instance as any)[executionPlan!.handlerName].apply(
+              instance,
+              args
+            );
             if (result instanceof Response) return result;
             if (typeof result === 'object' && result !== null) return Response.json(result);
-            if (result === undefined || result === null) return new Response(null, { status: 204 });
+            if (result === undefined || result === null)
+              return new Response(null, { status: HttpStatus.NO_CONTENT });
             return new Response(String(result));
           };
 
-          const chain = middlewareInstances
+          return await executionPlan.middlewareInstances
             .reverse()
-            .reduce((next, middleware) => () => middleware.use(req, next), finalHandler);
-
-          return await chain();
+            .reduce((next, middleware) => () => middleware.use(req, next), finalHandler)();
         } catch (error: any) {
           const host: ArgumentsHost = { getRequest: <Request>() => req as Request };
-          let routeFilters: any[] = [];
-          let controllerFilters: any[] = [];
-          if (controllerClassToken && handlerName) {
-            controllerFilters =
-              Reflect.getMetadata(FILTERS_METADATA_KEY, controllerClassToken) || [];
-            if (handlerName) {
-              routeFilters =
-                Reflect.getMetadata(
-                  FILTERS_METADATA_KEY,
-                  controllerClassToken.prototype,
-                  handlerName
-                ) || [];
-            }
-          }
-          const allFilterClasses = [...this.globalFilters, ...controllerFilters, ...routeFilters];
-
-          if (!controllerContext) {
-            controllerContext = createResolutionContext(this.rootModuleRef, this.globalModuleRefs);
-          }
-
-          for (const FilterClass of allFilterClasses) {
-            const exceptionTypesToCatch =
-              Reflect.getMetadata(CATCH_METADATA_KEY, FilterClass) || [];
-            const canCatch =
-              exceptionTypesToCatch.length === 0 ||
-              exceptionTypesToCatch.some((type: any) => error instanceof type);
-            if (canCatch) {
-              console.log(
-                `Using specific filter for ${error.constructor.name}: ${FilterClass.name}`
-              );
-              const filterInstance = resolve(FilterClass, controllerContext);
-              return (filterInstance as ExceptionFilter).catch(error, host);
+          if (executionPlan && context) {
+            for (const filter of executionPlan.filterInstances) {
+              const types = Reflect.getMetadata(CATCH_METADATA_KEY, filter.constructor) || [];
+              if (types.length === 0 || types.some((t: any) => error instanceof t))
+                return filter.catch(error, host);
             }
           }
           return this.baseExceptionFilter.catch(error, host);
         }
       },
-      error: (error: Error) => {
-        console.error('Bun server error:', error);
-        return new Response('Server error', { status: 500 });
-      },
+      error: (e: Error) =>
+        new Response('Server error', { status: HttpStatus.INTERNAL_SERVER_ERROR }),
     });
 
     console.log(`🌊 App is running on http://localhost:${port}`);
+
+    return server;
   }
 }
