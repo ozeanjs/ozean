@@ -44,6 +44,7 @@ export default defineConfig({
 						{ label: 'Providers', slug: 'docs/overview/providers' },
 						{ label: 'Pipes', slug: 'docs/overview/pipes' },
 						{ label: 'Guards', slug: 'docs/overview/guards' },
+						{ label: 'Static File Serving', slug: 'docs/overview/static-file-serving' },
 						{ label: 'Exception Handling', slug: 'docs/overview/exception-handling' },
 					],
 				},
