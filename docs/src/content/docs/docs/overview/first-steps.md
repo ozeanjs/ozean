@@ -35,7 +35,7 @@ Once the command is finished:
 cd my-app
 
 # 2. Run the development server
-bun run dev
+bun run index
 ```
 
 Your application will start running at `http://localhost:3000` immediately!
