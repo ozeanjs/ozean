@@ -5,7 +5,7 @@ import type { IModuleRef } from '../interfaces/module-ref.interface';
 import { MIDDLEWARE_METADATA_KEY } from '../decorators/use-middleware.decorator';
 import { PIPES_METADATA_KEY } from '../decorators/use-pipes.decorator';
 import type { Middleware, NextFunction } from '../interfaces/middleware.interface';
-import type { PipeTransform, ArgumentMetadata } from '../interfaces/pipe.interface';
+import type { ArgumentMetadata } from '../interfaces/pipe.interface';
 import { BadRequestException, ForbiddenException } from '../exceptions/http-exception';
 import type { ArgumentsHost, ExceptionFilter } from 'interfaces/exception-filter.interface';
 import { BaseExceptionFilter } from 'filters/base-exception-filter';
@@ -16,6 +16,7 @@ import { GUARDS_METADATA_KEY } from 'decorators/use-guards.decorator';
 import type { RouteExecutionPlan } from 'interfaces/execution-plan.interface';
 import { getMetadataArgsStorage } from 'metadata/storage';
 import { HttpStatus } from 'common/http-status.enum';
+import path from 'path';
 
 export class App {
   private globalFilters: (new (...args: any[]) => ExceptionFilter)[] = [];
@@ -26,6 +27,7 @@ export class App {
   private globalModuleRefs = new Set<IModuleRef>();
   private globalGuards: (new (...args: any[]) => CanActivate)[] = [];
   private routeCache = new Map<string, RouteExecutionPlan>();
+  private staticAssetsConfigs: { path: string; prefix: string }[] = [];
 
   constructor(private rootModuleClass: Function) {
     this.baseExceptionFilter = new BaseExceptionFilter();
@@ -35,6 +37,21 @@ export class App {
       throw new Error('Root module could not be compiled.');
     }
     this._bootstrapInstances();
+  }
+
+  useStaticAssets(directoryPath: string, options: { prefix?: string } = {}): this {
+    const prefix = options.prefix
+      ? options.prefix.startsWith('/')
+        ? options.prefix
+        : '/' + options.prefix
+      : '/';
+    const config = {
+      path: directoryPath,
+      prefix: prefix === '/' ? '' : prefix, // If prefix is '/', treat it as root for matching
+    };
+    this.staticAssetsConfigs.push(config);
+    console.log(`Serving static assets from "${directoryPath}" at URL prefix "${prefix}"`);
+    return this;
   }
 
   useGlobalGuards(...guards: (new (...args: any[]) => CanActivate)[]): this {
@@ -161,6 +178,7 @@ export class App {
 
   listen(port: number) {
     this._buildRouteCache();
+    const staticConfigs = this.staticAssetsConfigs;
 
     const server = Bun.serve({
       port,
@@ -170,7 +188,22 @@ export class App {
 
         try {
           const url = new URL(req.url);
-          const matched = matchRoute(req.method, url.pathname);
+          const pathname = url.pathname;
+
+          const matchingStaticConfig = staticConfigs
+            .sort((a, b) => b.prefix.length - a.prefix.length) // Sort by prefix length to match most specific first
+            .find((config) => pathname.startsWith(config.prefix));
+
+          if (matchingStaticConfig) {
+            const config = matchingStaticConfig;
+            const relativePath = pathname.substring(config.prefix.length);
+            const filePath = path.join(config.path, relativePath);
+
+            const file = Bun.file(filePath);
+            if (await file.exists()) return new Response(file);
+          }
+
+          const matched = matchRoute(req.method, pathname);
           if (!matched) return new Response('Not Found', { status: HttpStatus.NOT_FOUND });
 
           const cacheKey = `${req.method}:${matched.routePath}`; // router needs to return the matched path pattern
