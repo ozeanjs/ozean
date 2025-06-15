@@ -29,8 +29,8 @@
     "bump:patch": "bun run bump-versions.ts patch",
     "bump:minor": "bun run bump-versions.ts minor",
     "bump:major": "bun run bump-versions.ts major",
-    "example:example-exception-filter": "bun run --cwd=packages/examples/example-exception-filter dev",
-    "example:example-guards": "bun run --cwd=packages/examples/example-guards dev"
+    "example:example-exception-filter": "bun run --cwd=examples/example-exception-filter dev",
+    "example:example-guards": "bun run --cwd=examples/example-guards dev"
   },
   "devDependencies": {
     "husky": "^9.1.7",
