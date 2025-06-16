@@ -1,12 +1,18 @@
+import FindMyWay from 'find-my-way';
 import { resolve, createResolutionContext, type ResolutionContext } from './container';
-import { matchRoute } from '../router';
 import { ModuleRef } from './module-ref';
 import type { IModuleRef } from '../interfaces/module-ref.interface';
 import { MIDDLEWARE_METADATA_KEY } from '../decorators/use-middleware.decorator';
 import { PIPES_METADATA_KEY } from '../decorators/use-pipes.decorator';
 import type { Middleware, NextFunction } from '../interfaces/middleware.interface';
 import type { ArgumentMetadata } from '../interfaces/pipe.interface';
-import { BadRequestException, ForbiddenException } from '../exceptions/http-exception';
+import {
+  BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+  NotAcceptableException,
+  NotFoundException,
+} from '../exceptions/http-exception';
 import type { ArgumentsHost, ExceptionFilter } from 'interfaces/exception-filter.interface';
 import { BaseExceptionFilter } from 'filters/base-exception-filter';
 import { CATCH_METADATA_KEY } from 'decorators/catch.decorator';
@@ -31,9 +37,17 @@ export class App {
   private routeCache = new Map<string, RouteExecutionPlan>();
   private staticAssetsConfigs: { path: string; prefix: string }[] = [];
   private globalInterceptors: (Function | (new (...args: any[]) => Interceptor))[] = [];
+  private router: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
 
   constructor(private rootModuleClass: Function) {
     this.baseExceptionFilter = new BaseExceptionFilter();
+
+    this.router = FindMyWay({
+      defaultRoute: (req, res) => {
+        throw new NotAcceptableException();
+      },
+    });
+
     console.log(`Initializing app with root module: ${this.rootModuleClass.name}`);
     this._compileModules();
     if (!this.rootModuleRef) {
@@ -112,8 +126,10 @@ export class App {
     }
   }
 
-  private _buildRouteCache(): void {
-    console.log('Building route cache...');
+  private _initializeRouter(): void {
+    if ((this.router as any).routes.length > 0) return;
+
+    console.log('Initializing routes with find-my-way...');
     const routeMetadata = getMetadataArgsStorage().routes;
 
     for (const route of routeMetadata) {
@@ -185,7 +201,7 @@ export class App {
       const paramTypes =
         Reflect.getMetadata('design:paramtypes', controllerToken.prototype, handlerName) || [];
 
-      this.routeCache.set(cacheKey, {
+      const executionPlan: RouteExecutionPlan = {
         controllerToken,
         handlerName,
         middlewareInstances,
@@ -195,7 +211,9 @@ export class App {
         interceptorInstances,
         paramMeta,
         paramTypes,
-      });
+      };
+
+      this.router.on(method as any, fullPath, (req, res, params, store) => store, executionPlan);
     }
     console.log(`Route cache built with ${this.routeCache.size} entries.`);
   }
@@ -208,7 +226,7 @@ export class App {
   }
 
   listen(port: number) {
-    this._buildRouteCache();
+    this._initializeRouter();
     const staticConfigs = this.staticAssetsConfigs;
 
     const server = Bun.serve({
@@ -234,17 +252,19 @@ export class App {
             if (await file.exists()) return new Response(file);
           }
 
-          const matched = matchRoute(req.method, pathname);
-          if (!matched) return new Response('Not Found', { status: HttpStatus.NOT_FOUND });
+          const found = this.router.find(req.method as any, pathname);
+          if (!found) {
+            throw new NotFoundException();
+          }
 
-          const cacheKey = `${req.method}:${matched.routePath}`; // router needs to return the matched path pattern
-          executionPlan = this.routeCache.get(cacheKey);
+          executionPlan = found.store as RouteExecutionPlan;
+          const matched = { params: found.params };
 
           if (!executionPlan) {
-            console.error(`Execution plan not found for key: ${cacheKey}`);
-            return new Response(`Internal Server Error: Route handler not configured correctly.`, {
-              status: HttpStatus.INTERNAL_SERVER_ERROR,
-            });
+            console.error(`Execution plan not found for route: ${pathname}`);
+            throw new InternalServerErrorException(
+              'Internal Server Error: Route handler not configured correctly.'
+            );
           }
 
           const moduleRef = this.getModuleRefByController(executionPlan.controllerToken);
