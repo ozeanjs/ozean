@@ -17,6 +17,8 @@ import type { RouteExecutionPlan } from 'interfaces/execution-plan.interface';
 import { getMetadataArgsStorage } from 'metadata/storage';
 import { HttpStatus } from 'common/http-status.enum';
 import path from 'path';
+import type { CallHandler, Interceptor } from 'interfaces/interceptor.interface';
+import { INTERCEPTORS_METADATA_KEY } from 'decorators/use-interceptors.decorator';
 
 export class App {
   private globalFilters: (new (...args: any[]) => ExceptionFilter)[] = [];
@@ -28,6 +30,7 @@ export class App {
   private globalGuards: (new (...args: any[]) => CanActivate)[] = [];
   private routeCache = new Map<string, RouteExecutionPlan>();
   private staticAssetsConfigs: { path: string; prefix: string }[] = [];
+  private globalInterceptors: (Function | (new (...args: any[]) => Interceptor))[] = [];
 
   constructor(private rootModuleClass: Function) {
     this.baseExceptionFilter = new BaseExceptionFilter();
@@ -37,6 +40,13 @@ export class App {
       throw new Error('Root module could not be compiled.');
     }
     this._bootstrapInstances();
+  }
+
+  useGlobalInterceptors(
+    ...interceptors: (Function | (new (...args: any[]) => Interceptor))[]
+  ): this {
+    this.globalInterceptors.push(...interceptors);
+    return this;
   }
 
   useStaticAssets(directoryPath: string, options: { prefix?: string } = {}): this {
@@ -121,6 +131,26 @@ export class App {
 
       const context = createResolutionContext(moduleRef, this.globalModuleRefs);
 
+      const routeInterceptors =
+        Reflect.getMetadata(INTERCEPTORS_METADATA_KEY, controllerToken.prototype, handlerName) ||
+        [];
+      const controllerInterceptors =
+        Reflect.getMetadata(INTERCEPTORS_METADATA_KEY, controllerToken) || [];
+      const interceptorClasses = [
+        ...this.globalInterceptors,
+        ...controllerInterceptors,
+        ...routeInterceptors,
+      ];
+      const interceptorInstances = interceptorClasses.map((Interceptor) => {
+        const InterceptorClass =
+          typeof Interceptor === 'function' && Interceptor.prototype
+            ? Interceptor
+            : (Interceptor as Function)();
+        return resolve(InterceptorClass as any, context, {
+          bypassAccessibilityCheck: true,
+        }) as Interceptor;
+      });
+
       // Pre-resolve middlewares, guards, pipes, filters
       const routeMiddlewares =
         Reflect.getMetadata(MIDDLEWARE_METADATA_KEY, controllerToken.prototype, handlerName) || [];
@@ -162,6 +192,7 @@ export class App {
         guardInstances,
         pipeInstances,
         filterInstances,
+        interceptorInstances,
         paramMeta,
         paramTypes,
       });
@@ -236,42 +267,61 @@ export class App {
               if (!(await guard.canActivate(executionContext))) throw new ForbiddenException();
             }
 
-            const instance = resolve(executionPlan!.controllerToken as any, context!);
-            let body: any = {};
-            if (req.method !== 'GET' && req.method !== 'HEAD')
-              try {
-                if (req.headers.get('content-type')?.includes('json')) body = await req.json();
-              } catch (e) {
-                throw new BadRequestException('Invalid body');
-              }
+            const handlerWithPipes = async () => {
+              const instance = resolve(executionPlan!.controllerToken as any, context!);
+              let body: any = {};
 
-            const args = new Array(executionPlan!.paramTypes.length);
-            for (let i = 0; i < args.length; i++) {
-              const meta = executionPlan!.paramMeta[i];
-              let val: any;
-              if (meta) {
-                if (meta.type === 'query') val = Object.fromEntries(url.searchParams)[meta.key];
-                else if (meta.type === 'param') val = matched.params[meta.key];
-                else if (meta.type === 'body') val = meta.key ? body[meta.key] : body;
+              if (req.method !== 'GET' && req.method !== 'HEAD')
+                try {
+                  if (req.headers.get('content-type')?.includes('json')) body = await req.json();
+                } catch (e) {
+                  throw new BadRequestException('Invalid body');
+                }
+
+              const args = new Array(executionPlan!.paramTypes.length);
+              for (let i = 0; i < args.length; i++) {
+                const meta = executionPlan!.paramMeta[i];
+                let val: any;
+                if (meta) {
+                  if (meta.type === 'file') val = (req as any).file;
+                  else if (meta.type === 'query')
+                    val = Object.fromEntries(url.searchParams)[meta.key];
+                  else if (meta.type === 'param') val = matched.params[meta.key];
+                  else if (meta.type === 'body') val = meta.key ? body[meta.key] : body;
+                }
+                const argMeta: ArgumentMetadata = {
+                  type: meta?.type,
+                  metatype: executionPlan!.paramTypes[i],
+                  data: meta?.key,
+                };
+                for (const pipe of executionPlan!.pipeInstances)
+                  val = await pipe.transform(val, argMeta);
+                args[i] = val;
               }
-              const argMeta: ArgumentMetadata = {
-                type: meta?.type,
-                metatype: executionPlan!.paramTypes[i],
-                data: meta?.key,
-              };
-              for (const pipe of executionPlan!.pipeInstances)
-                val = await pipe.transform(val, argMeta);
-              args[i] = val;
-            }
-            const result = await (instance as any)[executionPlan!.handlerName].apply(
-              instance,
-              args
-            );
-            if (result instanceof Response) return result;
-            if (typeof result === 'object' && result !== null) return Response.json(result);
-            if (result === undefined || result === null)
-              return new Response(null, { status: HttpStatus.NO_CONTENT });
-            return new Response(String(result));
+              const result = await (instance as any)[executionPlan!.handlerName].apply(
+                instance,
+                args
+              );
+              if (result instanceof Response) return result;
+              if (typeof result === 'object' && result !== null) return Response.json(result);
+              if (result === undefined || result === null)
+                return new Response(null, { status: HttpStatus.NO_CONTENT });
+              return new Response(String(result));
+            };
+
+            // Build the interceptor chain
+            const interceptorInstances = executionPlan!.interceptorInstances;
+            const interceptorChain: CallHandler = interceptorInstances
+              .slice() // Create a shallow copy to not affect the cache
+              .reverse()
+              .reduce(
+                (next: any, interceptor: any) => ({
+                  handle: () => interceptor.intercept(executionContext, next),
+                }),
+                { handle: handlerWithPipes }
+              );
+
+            return await interceptorChain.handle();
           };
 
           return await executionPlan.middlewareInstances

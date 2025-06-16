@@ -7,6 +7,10 @@ export interface ResolutionContext {
   globalModuleRefs: Set<IModuleRef>;
 }
 
+export interface ResolveOptions {
+  bypassAccessibilityCheck?: boolean;
+}
+
 function canResolveProvider<T>(
   tokenToResolve: new (...args: any[]) => T,
   context: ResolutionContext
@@ -43,7 +47,11 @@ function canResolveProvider<T>(
   return false;
 }
 
-export function resolve<T>(Token: new (...args: any[]) => T, context: ResolutionContext): T {
+export function resolve<T>(
+  Token: new (...args: any[]) => T,
+  context: ResolutionContext,
+  options: ResolveOptions = {}
+): T {
   if (typeof Token !== 'function' || !Token.prototype) {
     const requestingModuleName = context.requestingModuleRef?.token?.name || 'UnknownModule';
     const errorMessage = `[DI Error in ${requestingModuleName}] Invalid token for resolution. Expected a constructor function.`;
@@ -51,7 +59,7 @@ export function resolve<T>(Token: new (...args: any[]) => T, context: Resolution
     throw new Error(errorMessage);
   }
 
-  if (!canResolveProvider(Token, context)) {
+  if (!options.bypassAccessibilityCheck && !canResolveProvider(Token, context)) {
     const requestingModuleName = context.requestingModuleRef.token.name;
     const tokenName = Token.name;
     const errorMessage = `[DI Error in ${requestingModuleName}] Provider, Controller, or Middleware '${tokenName}' is not accessible in the current module scope. Check if it's provided in the module, or if it's part of an imported module that exports it.`;
