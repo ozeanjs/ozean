@@ -15,7 +15,8 @@ export default defineConfig({
 			},
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/ozeanjs/ozean' },
-				{ icon: 'npm', label: 'npm', href: 'https://www.npmjs.com/package/ozean' }
+				{ icon: 'npm', label: 'npm', href: 'https://www.npmjs.com/package/ozean' },
+				{ icon: 'discord', label: 'npm', href: 'https://discord.gg/rMBc8Snft4' }
 			],
 			sidebar: [
 				{
