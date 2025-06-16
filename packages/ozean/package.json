@@ -1,6 +1,6 @@
 {
   "name": "ozean",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "A modern, simple, and high-performance web framework for Bun, inspired by Angular's architecture.",
   "keywords": [
     "ozean",
@@ -44,7 +44,7 @@
     "dev": "bun run examples/example.ts",
     "clean": "rimraf ./dist",
     "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --outDir ./dist",
-    "build:js": "bun build ./src/index.ts --outdir ./dist --target bun --format esm --format cjs --sourcemap=external",
+    "build:js": "bun build ./src/index.ts --outdir ./dist --target bun --format esm --sourcemap=external",
     "build": "bun run clean && bun run build:types && bun run build:js",
     "test": "bun test"
   },
@@ -59,6 +59,7 @@
   "dependencies": {
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "find-my-way": "^9.3.0"
   }
 }
