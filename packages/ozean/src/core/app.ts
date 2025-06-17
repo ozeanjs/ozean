@@ -38,6 +38,7 @@ export class App {
   private staticAssetsConfigs: { path: string; prefix: string }[] = [];
   private globalInterceptors: (Function | (new (...args: any[]) => Interceptor))[] = [];
   private router: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
+  private resolvedInstances: any[] = [];
 
   constructor(private rootModuleClass: Function) {
     this.baseExceptionFilter = new BaseExceptionFilter();
@@ -118,13 +119,54 @@ export class App {
       const context = createResolutionContext(moduleRef, this.globalModuleRefs);
       if (moduleRef.metadata.providers)
         for (const ProviderClass of moduleRef.metadata.providers)
-          if (typeof ProviderClass === 'function' && ProviderClass.prototype)
-            resolve(ProviderClass as any, context);
+          if (typeof ProviderClass === 'function' && ProviderClass.prototype) {
+            const instance = resolve(ProviderClass as any, context);
+            this.resolvedInstances.push(instance);
+          }
+
       if (moduleRef.metadata.controllers)
         for (const ControllerClass of moduleRef.metadata.controllers)
           if (typeof ControllerClass === 'function' && ControllerClass.prototype)
             resolve(ControllerClass as any, context);
+
+      this._callOnModuleInit();
     }
+  }
+
+  private async _callOnModuleInit(): Promise<void> {
+    for (const instance of this.resolvedInstances) {
+      if (typeof instance.onModuleInit === 'function') {
+        await instance.onModuleInit();
+      }
+    }
+  }
+
+  private async _callOnApplicationBootstrap(): Promise<void> {
+    for (const instance of this.resolvedInstances) {
+      if (typeof instance.onApplicationBootstrap === 'function') {
+        await instance.onApplicationBootstrap();
+      }
+    }
+  }
+
+  private async _callOnApplicationShutdown(signal?: string): Promise<void> {
+    console.log(`\n[OzeanJs] Shutting down application (signal: ${signal})...`);
+    for (const instance of [...this.resolvedInstances].reverse()) {
+      if (typeof instance.onApplicationShutdown === 'function') {
+        await instance.onApplicationShutdown(signal);
+      }
+    }
+    console.log('[OzeanJs] Application has been shut down gracefully.');
+  }
+
+  public enableShutdownHooks(signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM']): void {
+    console.log('[OzeanJs] Shutdown hooks enabled.');
+    signals.forEach((signal) => {
+      process.on(signal, async () => {
+        await this._callOnApplicationShutdown(signal);
+        process.exit(0);
+      });
+    });
   }
 
   private joinUrlPaths(...parts: string[]): string {
@@ -232,6 +274,7 @@ export class App {
 
   listen(port: number) {
     this._initializeRouter();
+    this._callOnApplicationBootstrap();
     const staticConfigs = this.staticAssetsConfigs;
 
     const server = Bun.serve({

@@ -22,6 +22,11 @@ export type { PipeTransform, ArgumentMetadata } from './interfaces/pipe.interfac
 export type { ExceptionFilter, ArgumentsHost } from './interfaces/exception-filter.interface';
 export type { CanActivate, ExecutionContext } from './interfaces/can-activate.interface';
 export type { Interceptor, CallHandler } from './interfaces/interceptor.interface';
+export type {
+  OnModuleInit,
+  OnApplicationBootstrap,
+  OnApplicationShutdown,
+} from './interfaces/lifecycle-hooks.interface';
 export {
   HttpException,
   BadRequestException,
