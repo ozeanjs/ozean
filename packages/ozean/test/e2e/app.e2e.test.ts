@@ -110,6 +110,9 @@ class RolesGuard implements CanActivate {
 
 @Injectable()
 class AppService {
+  getApp() {
+    return 'Hello E2E World (App)!';
+  }
   getHello() {
     return 'Hello E2E World!';
   }
@@ -126,6 +129,11 @@ class AppService {
 @UseFilters(OrderNotFoundFilter)
 class TestAppController {
   constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getApp() {
+    return this.appService.getApp();
+  }
 
   @Get('/hello')
   getHello() {
@@ -203,6 +211,22 @@ describe('App End-to-End (E2E) Test Suite', () => {
       const response = await fetch(new URL('/app/hello', server.url));
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('Hello E2E World!');
+    });
+
+    test('GET /app/hello/ - should return 404', async () => {
+      const response = await fetch(new URL('/app/hello/', server.url));
+      expect(response.status).toBe(404);
+    });
+
+    test('GET /app - should return 200 with text', async () => {
+      const response = await fetch(new URL('/app', server.url));
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe('Hello E2E World (App)!');
+    });
+
+    test('GET /app/ - should return 404', async () => {
+      const response = await fetch(new URL('/app/', server.url));
+      expect(response.status).toBe(404);
     });
 
     test('GET /app/item/:id - should handle path parameters', async () => {

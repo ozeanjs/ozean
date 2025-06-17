@@ -47,6 +47,7 @@ export default defineConfig({
 						{ label: 'Guards', slug: 'docs/overview/guards' },
 						{ label: 'File Uploads', slug: 'docs/overview/file-uploads' },
 						{ label: 'Static File Serving', slug: 'docs/overview/static-file-serving' },
+						{ label: 'Lifecycle Hooks', slug: 'docs/overview/lifecycle-hooks' },
 						{ label: 'Exception Handling', slug: 'docs/overview/exception-handling' },
 					],
 				},

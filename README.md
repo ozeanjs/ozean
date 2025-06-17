@@ -77,7 +77,7 @@ cd my-awesome-app
 Run your application in development mode with the command:
 
 ```bash
-bun run dev
+bun run index
 ```
 
 (This script is already defined in the `package.json` of the generated project.)
