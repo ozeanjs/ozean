@@ -43,6 +43,7 @@ export class App {
     this.baseExceptionFilter = new BaseExceptionFilter();
 
     this.router = FindMyWay({
+      // ignoreTrailingSlash: true,
       defaultRoute: (req, res) => {
         throw new NotAcceptableException();
       },
@@ -126,6 +127,14 @@ export class App {
     }
   }
 
+  private joinUrlPaths(...parts: string[]): string {
+    const joined = parts
+      .map((part) => part.trim().replace(/^\/|\/$/g, ''))
+      .filter(Boolean)
+      .join('/');
+    return `/${joined}${parts[parts.length - 1]?.match(/\/$/g) ? '/' : ''}`;
+  }
+
   private _initializeRouter(): void {
     if ((this.router as any).routes.length > 0) return;
 
@@ -136,11 +145,7 @@ export class App {
       const { target: controllerToken, handlerName, method, path: routePath } = route;
       const controllerPath =
         getMetadataArgsStorage().controllers[controllerToken as any]?.path || '/';
-      const fullPath =
-        (controllerPath === '/' ? '' : controllerPath) +
-        (routePath.startsWith('/') ? '' : '/') +
-        routePath;
-      const cacheKey = `${method}:${fullPath}`; // e.g., "GET:/users/:id"
+      const fullPath = this.joinUrlPaths(controllerPath, routePath);
 
       const moduleRef = this.getModuleRefByController(controllerToken);
       if (!moduleRef) continue;
