@@ -58,6 +58,10 @@ export default defineConfig({
 						{ label: 'Create Project', slug: 'docs/cli/cli-new' },
 					],
 				},
+				{
+					label: 'Changelog',
+					link: "https://github.com/ozeanjs/ozean/releases"
+				},
 			],
 		}),
 	],
