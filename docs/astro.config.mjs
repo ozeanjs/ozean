@@ -10,6 +10,25 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'OzeanJs',
+			head: [
+				{
+					tag: "script",
+					attrs: {
+						src: "https://www.googletagmanager.com/gtag/js?id=G-8BTJB95WVT",
+						async: true
+					}
+				},
+				{
+					tag: "script",
+					content: `
+						window.dataLayer = window.dataLayer || [];
+						function gtag(){dataLayer.push(arguments);}
+						gtag('js', new Date());
+
+						gtag('config', 'G-8BTJB95WVT');
+				`
+				}
+			],
 			logo: {
 				src: './src/assets/logo.svg',
 			},
