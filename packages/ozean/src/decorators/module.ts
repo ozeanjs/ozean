@@ -1,4 +1,4 @@
-import type { ModuleMetadata } from '../interfaces/module-ref.interface';
+import type { ModuleMetadata } from '../interfaces/module.interface';
 
 export function Module(metadata: ModuleMetadata): ClassDecorator {
   return (target) => {

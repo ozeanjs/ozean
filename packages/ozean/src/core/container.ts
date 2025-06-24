@@ -1,6 +1,15 @@
+import type {
+  ClassProvider,
+  FactoryProvider,
+  Provider,
+  ProviderToken,
+  TypeProvider,
+  ValueProvider,
+} from 'interfaces/provider.interface';
 import type { IModuleRef } from '../interfaces/module-ref.interface';
+import { INJECT_METADATA_KEY } from 'decorators/injectable';
 
-const SINGLETONS = new Map<Function, any>();
+const SINGLETONS = new Map<ProviderToken, any>();
 
 export interface ResolutionContext {
   requestingModuleRef: IModuleRef;
@@ -11,96 +20,73 @@ export interface ResolveOptions {
   bypassAccessibilityCheck?: boolean;
 }
 
-function canResolveProvider<T>(
-  tokenToResolve: new (...args: any[]) => T,
-  context: ResolutionContext
-): boolean {
-  const { requestingModuleRef, globalModuleRefs } = context;
-
-  if (requestingModuleRef.metadata.controllers?.includes(tokenToResolve)) {
-    return true;
-  }
-
-  if (requestingModuleRef.hasProvider(tokenToResolve)) {
-    return true;
-  }
-
-  for (const importedModuleRef of requestingModuleRef.imports) {
-    if (
-      importedModuleRef.hasProvider(tokenToResolve) &&
-      importedModuleRef.isProviderExported(tokenToResolve)
-    ) {
-      return true;
-    }
-  }
-
-  for (const globalModuleRef of globalModuleRefs) {
-    if (globalModuleRef === requestingModuleRef) continue;
-    if (
-      globalModuleRef.hasProvider(tokenToResolve) &&
-      globalModuleRef.isProviderExported(tokenToResolve)
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+function isClassProvider(p: Provider): p is ClassProvider {
+  return !!(p as ClassProvider).useClass;
+}
+function isValueProvider(p: Provider): p is ValueProvider {
+  return (p as ValueProvider).useValue !== undefined;
+}
+function isFactoryProvider(p: Provider): p is FactoryProvider {
+  return !!(p as FactoryProvider).useFactory;
 }
 
 export function resolve<T>(
-  Token: new (...args: any[]) => T,
+  Token: ProviderToken,
   context: ResolutionContext,
   options: ResolveOptions = {}
 ): T {
-  if (typeof Token !== 'function' || !Token.prototype) {
-    const requestingModuleName = context.requestingModuleRef?.token?.name || 'UnknownModule';
-    const errorMessage = `[DI Error in ${requestingModuleName}] Invalid token for resolution. Expected a constructor function.`;
-    console.error(errorMessage, 'Received:', Token);
-    throw new Error(errorMessage);
-  }
+  const provider = !options.bypassAccessibilityCheck
+    ? context.requestingModuleRef.findProvider(Token)
+    : (Token as TypeProvider);
+  if (!provider)
+    throw new Error(
+      `[DI] Provider with token "${String(Token)}" not found in the scope of module "${context.requestingModuleRef.token.name}".`
+    );
+  if (isValueProvider(provider)) return provider.useValue as T;
 
-  if (!options.bypassAccessibilityCheck && !canResolveProvider(Token, context)) {
-    const requestingModuleName = context.requestingModuleRef.token.name;
-    const tokenName = Token.name;
-    const errorMessage = `[DI Error in ${requestingModuleName}] Provider, Controller, or Middleware '${tokenName}' is not accessible in the current module scope. Check if it's provided in the module, or if it's part of an imported module that exports it.`;
-    console.error(errorMessage);
-    throw new Error(errorMessage);
-  }
-
-  const scope = Reflect.getMetadata('custom:scope', Token) || 'singleton';
+  const scope = Reflect.getMetadata('custom:scope', provider) || 'singleton';
 
   if (scope === 'singleton' && SINGLETONS.has(Token)) {
     return SINGLETONS.get(Token);
   }
 
-  const paramTypes: any[] = Reflect.getMetadata('design:paramtypes', Token) || [];
-  const deps = paramTypes.map((depToken, index) => {
-    if (typeof depToken !== 'function' || !depToken.prototype) {
-      const requestingModuleName = context.requestingModuleRef.token.name;
-      const errorMessage = `[DI Error in ${requestingModuleName} for ${Token.name}] Cannot resolve dependency at index ${index}. Dependency is not a constructor: ${depToken?.name || depToken}`;
-      console.warn(errorMessage, 'Received:', depToken);
-      throw new Error(errorMessage);
-    }
-    return resolve(depToken as new (...args: any[]) => any, context);
-  });
-
   let instance: T;
   try {
-    instance = new Token(...deps);
+    if (isFactoryProvider(provider)) {
+      const deps = (provider.inject || []).map((depToken) => resolve(depToken, context));
+      instance = provider.useFactory(...deps);
+    } else {
+      const concreteType = isClassProvider(provider)
+        ? provider.useClass
+        : (provider as TypeProvider);
+      const paramTypes: ProviderToken[] =
+        Reflect.getMetadata('design:paramtypes', concreteType) || [];
+      const injectedTokens: (ProviderToken | undefined)[] =
+        Reflect.getMetadata(INJECT_METADATA_KEY, concreteType) || [];
+
+      const constructorParamLength = concreteType.length;
+      const deps = Array.from({ length: constructorParamLength }).map((_, index) => {
+        // Prioritize the token from @Inject() decorator
+        const tokenToResolve = injectedTokens[index] || paramTypes[index];
+        if (!tokenToResolve) {
+          throw new Error(
+            `[DI] Cannot resolve dependency at index ${index} for ${concreteType.name}. Ensure it's a class or use @Inject() for non-class tokens.`
+          );
+        }
+        return resolve(tokenToResolve, context);
+      });
+
+      instance = new concreteType(...deps);
+    }
   } catch (e: any) {
     const requestingModuleName = context.requestingModuleRef.token.name;
-    const errorMessage = `[DI Error in ${requestingModuleName}] Failed to instantiate ${Token.name}: ${e.message}`;
-    console.error(
-      errorMessage,
-      'with dependencies:',
-      deps.map((d) => d?.constructor?.name || d)
-    );
+    const errorMessage = `[DI Error in ${requestingModuleName}] Failed to instantiate ${String(Token)}: ${e.message}`;
     throw new Error(errorMessage);
   }
 
-  if (scope === 'singleton') {
-    SINGLETONS.set(Token, instance);
-  }
+  const providerClass = (provider as ClassProvider).useClass || provider;
+  const scopeProviderClass = Reflect.getMetadata('custom:scope', providerClass) || 'singleton';
+  if (scopeProviderClass === 'singleton') SINGLETONS.set(Token, instance);
   return instance;
 }
 

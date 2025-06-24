@@ -67,6 +67,7 @@ export default defineConfig({
 						{ label: 'File Uploads', slug: 'docs/overview/file-uploads' },
 						{ label: 'Static File Serving', slug: 'docs/overview/static-file-serving' },
 						{ label: 'Lifecycle Hooks', slug: 'docs/overview/lifecycle-hooks' },
+						{ label: 'Dynamic Modules', slug: 'docs/overview/dynamic-modules' },
 						{ label: 'Exception Handling', slug: 'docs/overview/exception-handling' },
 					],
 				},
