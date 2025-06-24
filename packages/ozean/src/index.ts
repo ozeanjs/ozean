@@ -4,7 +4,7 @@ export { App } from './core/app';
 export { Module } from './decorators/module';
 export { Controller } from './decorators/controller';
 export { Get, Post, Put, Delete, Patch } from './decorators/http-methods';
-export { Injectable } from './decorators/injectable';
+export { Injectable, Inject } from './decorators/injectable';
 export { Query, Param, Body } from './decorators/parameters';
 export { UseMiddleware } from './decorators/use-middleware.decorator';
 export { UsePipes } from './decorators/use-pipes.decorator';
@@ -17,11 +17,15 @@ export { Reflector } from './core/reflector.service';
 export { ValidationPipe } from './pipes/validation.pipe';
 export { FileInterceptor } from './interceptors/file.interceptor';
 export { HttpStatus } from './common/http-status.enum';
+export type { DynamicModule, ModuleMetadata } from './interfaces/module.interface';
 export type { Middleware, NextFunction } from './interfaces/middleware.interface';
 export type { PipeTransform, ArgumentMetadata } from './interfaces/pipe.interface';
 export type { ExceptionFilter, ArgumentsHost } from './interfaces/exception-filter.interface';
 export type { CanActivate, ExecutionContext } from './interfaces/can-activate.interface';
 export type { Interceptor, CallHandler } from './interfaces/interceptor.interface';
+export type { IModuleRef } from './interfaces/module-ref.interface';
+export type { Provider, ProviderToken } from './interfaces/provider.interface';
+export type { RouteExecutionPlan } from './interfaces/execution-plan.interface';
 export type {
   OnModuleInit,
   OnApplicationBootstrap,
