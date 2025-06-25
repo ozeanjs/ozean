@@ -11,7 +11,21 @@ export default defineConfig({
   title: 'OzeanJs',
   description:
     "A modern, simple, and high-performance web framework for Bun, inspired by Angular's architecture.",
-  head: [['link', { rel: 'icon', href: '/favicon.svg' }]],
+  head: [
+    ['link', { rel: 'icon', href: '/favicon.svg' }],
+    ['script', { async: '', src: 'https://www.googletagmanager.com/gtag/js?id=G-8BTJB95WVT' }],
+    [
+      'script',
+      {},
+      `window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8BTJB95WVT');`,
+    ],
+  ],
+  sitemap: {
+    hostname: 'https://ozeanjs.com',
+  },
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     logo: { src: '/logo.svg' },
