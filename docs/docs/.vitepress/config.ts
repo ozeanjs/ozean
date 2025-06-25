@@ -10,7 +10,7 @@ const siteTitle = 'OzeanJs';
 const siteDescription =
   'A progressive Bun framework for crafting efficient and scalable server-side applications.';
 const siteUrl = 'https://ozeanjs.com';
-const siteImage = 'https://ozeanjs.com/logo.svg';
+const siteImage = 'https://ozeanjs.com/logo.jpeg';
 const siteKeyWord = pkg.keywords.join(',');
 
 // https://vitepress.dev/reference/site-config
