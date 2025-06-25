@@ -1,7 +1,4 @@
----
-title: Dynamic Modules
-description: Dynamic Modules are an advanced and powerful feature of OzeanJs that allow you to create modules that can be configured upon import. This pattern is often called the `.forRoot()` pattern and is highly popular in frameworks like Angular and NestJS.
----
+# Dynamic Modules
 
 Dynamic Modules are an advanced and powerful feature of OzeanJs that allow you to create modules that can be configured upon import. This pattern is often called the `.forRoot()` pattern and is highly popular in frameworks like Angular and NestJS.
 

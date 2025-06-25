@@ -1,7 +1,4 @@
----
-title: Controllers
-description: In OzeanJs, a Controller's main responsibility is to receive incoming HTTP requests from the client, process them, and send back an HTTP response. A Controller acts as the "front line" that connects the outside world to your application's business logic.
----
+# Controllers
 
 In OzeanJs, a **Controller**'s main responsibility is to receive incoming HTTP requests from the client, process them, and send back an HTTP response. A Controller acts as the "front line" that connects the outside world to your application's business logic.
 

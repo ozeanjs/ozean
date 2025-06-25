@@ -1,7 +1,4 @@
----
-title: First steps
-description: This document will guide you through installing and starting an OceanJs project. There are two convenient methods to choose from.
----
+# First steps
 
 This document will guide you through installing and starting an OceanJs project. There are two convenient methods to choose from.
 

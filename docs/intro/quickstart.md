@@ -1,7 +1,4 @@
----
-title: Quick Start
-description: A ozean quick start
----
+# Quick Start
 
 This guide shows the fastest way to create and run your first OzeanJs project using the **Ozean CLI**.
 

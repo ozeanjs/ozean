@@ -1,7 +1,4 @@
----
-title: Guards
-description: In OzeanJs, a Guard is a class with a single responsibility Authorization. It determines whether a given request has the necessary permissions to access a specific route handler.
----
+# Guards
 
 In OzeanJs, a **Guard** is a class with a single responsibility: **Authorization**. It determines whether a given request has the necessary permissions to access a specific route handler.
 

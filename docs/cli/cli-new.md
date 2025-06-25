@@ -1,7 +1,4 @@
----
-title: Create Project Command
-description: The `new` command is the starting point for creating a brand new OzeanJs project. It scaffolds a project structure with everything you need to begin developing your application.
----
+# Create Project Command
 
 The `new` command is the starting point for creating a brand new OzeanJs project. It scaffolds a project structure with everything you need to begin developing your application.
 

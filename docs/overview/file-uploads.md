@@ -1,7 +1,4 @@
----
-title: File Uploads
-description: OzeanJs has a built-in feature that helps manage file uploads (sent as `multipart/form-data`) easily and systematically, using an Interceptor called `FileInterceptor`.
----
+# File Uploads
 
 OzeanJs has a built-in feature that helps manage file uploads (sent as `multipart/form-data`) easily and systematically, using an Interceptor called **`FileInterceptor`**.
 

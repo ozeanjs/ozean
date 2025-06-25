@@ -1,7 +1,4 @@
----
-title: Exception Handling
-description: Providers are a fundamental concept in OzeanJs. They are classes that can be "injected" as dependencies into other classes. Most of the time, they are services that encapsulate business logic, but they can also be repositories, factories, or helpers.
----
+# Exception Handling
 
 OzeanJs comes with a built-in exception handling system called **Exception Filters**, which allows you to catch exceptions that occur within your application and transform them into appropriate, standardized HTTP responses.
 

@@ -1,7 +1,4 @@
----
-title: Providers and Dependency Injection (DI)
-description: Providers are a fundamental concept in OzeanJs. They are classes that can be "injected" as dependencies into other classes. Most of the time, they are services that encapsulate business logic, but they can also be repositories, factories, or helpers.
----
+# Providers and Dependency Injection (DI)
 
 Providers are a fundamental concept in OzeanJs. They are classes that can be "injected" as dependencies into other classes. Most of the time, they are services that encapsulate business logic, but they can also be repositories, factories, or helpers.
 
