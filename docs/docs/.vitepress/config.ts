@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const pkg = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, '../../packages/ozean/package.json'), 'utf8')
+  fs.readFileSync(path.resolve(__dirname, '../../../packages/ozean/package.json'), 'utf8')
 );
 
 // https://vitepress.dev/reference/site-config
@@ -31,6 +31,7 @@ export default defineConfig({
     logo: { src: '/logo.svg' },
     nav: [
       { text: 'Guide', link: '/intro/what-is-ozeanjs' },
+      { text: 'Issues', link: 'https://github.com/ozeanjs/ozean/issues' },
       {
         text: `v${pkg.version}`,
         items: [
