@@ -11,6 +11,7 @@ const siteDescription =
   'A progressive Bun framework for crafting efficient and scalable server-side applications.';
 const siteUrl = 'https://ozeanjs.com';
 const siteImage = 'https://ozeanjs.com/logo.svg';
+const siteKeyWord = pkg.keywords.join(',');
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -23,6 +24,11 @@ export default defineConfig({
     ['meta', { property: 'og:title', content: siteTitle }],
     ['meta', { property: 'og:description', content: siteDescription }],
     ['meta', { property: 'og:image', content: siteImage }],
+
+    ['meta', { itemprop: 'name', content: siteTitle }],
+    ['meta', { itemprop: 'description', content: siteDescription }],
+    ['meta', { itemprop: 'keywords', content: siteKeyWord }],
+    ['meta', { itemprop: 'image', content: siteImage }],
 
     // Twitter
     ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
