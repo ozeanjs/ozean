@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: 'OzeanJs'
-  text: 'A web framework for Bun.'
-  tagline: A modern, simple, and high-performance web framework for Bun, inspired by Angular's architecture.
+  text: 'Web framework for Bun.'
+  tagline: A progressive Bun framework for crafting efficient and scalable server-side applications.
   image:
     src: /logo.svg
     alt: OzeanJs
