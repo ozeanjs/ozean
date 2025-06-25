@@ -1,7 +1,4 @@
----
-title: Modules
-description: In OzeanJs, a Module is the primary component for organizing the application's structure. Similar to `NgModule` in Angular, a Module acts as a "container" that groups related components, such as Controllers, Providers (Services), and even other Modules, together.
----
+# Modules
 
 In OzeanJs, a **Module** is the primary component for organizing the application's structure. Similar to `NgModule` in Angular, a Module acts as a "container" that groups related components, such as Controllers, Providers (Services), and even other Modules, together.
 

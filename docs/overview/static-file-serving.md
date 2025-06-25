@@ -1,7 +1,4 @@
----
-title: Static File Serving
-description: OzeanJs has a built-in capability to serve static files like images, CSS, or client-side JavaScript directly. This allows you to create applications with both an API and various assets within a single project, without needing additional web server configuration.
----
+# Static File Serving
 
 OzeanJs has a built-in capability to serve static files like images, CSS, or client-side JavaScript directly. This allows you to create applications with both an API and various assets within a single project, without needing additional web server configuration.
 

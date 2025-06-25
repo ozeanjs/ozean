@@ -1,7 +1,4 @@
----
-title: Pipes
-description: In OzeanJs, a Pipe is a class that acts as a "tube" through which data flows before being sent to your Route Handler (a method in your Controller).
----
+# Pipes
 
 In OzeanJs, a **Pipe** is a class that acts as a "tube" through which data flows before being sent to your Route Handler (a method in your Controller). A Pipe has two primary responsibilities:
 

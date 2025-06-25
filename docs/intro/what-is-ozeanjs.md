@@ -1,7 +1,4 @@
----
-title: What is OzeanJs?
-description: OceanJs is a modern, simple, and high-performance web framework built on the Bun runtime.
----
+# What is OzeanJs?
 
 Tired of complex setups and repetitive boilerplate? OceanJs is your answer.
 

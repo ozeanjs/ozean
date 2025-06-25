@@ -1,7 +1,4 @@
----
-title: Lifecycle Hooks
-description: OzeanJs provides a Lifecycle Hooks system, a powerful mechanism to "hook" into key moments of the application's lifecycle. This feature allows you to manage resources (like database connections) systematically and safely.
----
+# Lifecycle Hooks
 
 OzeanJs provides a **Lifecycle Hooks** system, a powerful mechanism to "hook" into key moments of the application's lifecycle. This feature allows you to manage resources (like database connections) systematically and safely.
 

@@ -1,7 +1,4 @@
----
-title: CLI Overview
-description: In OzeanJs, a Controller's main responsibility is to receive incoming HTTP requests from the client, process them, and send back an HTTP response. A Controller acts as the "front line" that connects the outside world to your application's business logic.
----
+# CLI Overview
 
 **OzeanJs CLI** is the official Command-Line Interface (CLI) for the OzeanJs Framework, designed to help you quickly start new projects and generate various application components.
 

@@ -1,7 +1,4 @@
----
-title: Key Features
-description: OceanJs is built on a Modular Architecture, inspired by Angular, which gives your code a clear, scalable, and easy-to-extend structure.
----
+# Key Features
 
 OceanJs is designed to be a modern framework with a clear structure and high performance. Its key features are as follows:
 

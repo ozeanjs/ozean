@@ -1,7 +1,4 @@
----
-title: Core Concepts
-description: OceanJs is built on a Modular Architecture, inspired by Angular, which gives your code a clear, scalable, and easy-to-extend structure.
----
+# Core Concepts
 
 OceanJs is built on a **Modular Architecture**, inspired by Angular, which gives your code a clear, scalable, and easy-to-extend structure.
 
