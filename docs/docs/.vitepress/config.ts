@@ -3,15 +3,34 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const pkg = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, '../../packages/ozean/package.json'), 'utf8')
+  fs.readFileSync(path.resolve(__dirname, '../../../packages/ozean/package.json'), 'utf8')
 );
+
+const siteTitle = 'OzeanJs';
+const siteDescription =
+  'A progressive Bun framework for crafting efficient and scalable server-side applications.';
+const siteUrl = 'https://ozeanjs.com';
+const siteImage = 'https://ozeanjs.com/logo.svg';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: 'OzeanJs',
-  description:
-    "A modern, simple, and high-performance web framework for Bun, inspired by Angular's architecture.",
+  title: siteTitle,
+  description: siteDescription,
   head: [
+    // Open Graph / Facebook
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:url', content: siteUrl }],
+    ['meta', { property: 'og:title', content: siteTitle }],
+    ['meta', { property: 'og:description', content: siteDescription }],
+    ['meta', { property: 'og:image', content: siteImage }],
+
+    // Twitter
+    ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { property: 'twitter:url', content: siteUrl }],
+    ['meta', { property: 'twitter:title', content: siteTitle }],
+    ['meta', { property: 'twitter:description', content: siteDescription }],
+    ['meta', { property: 'twitter:image', content: siteImage }],
+
     ['link', { rel: 'icon', href: '/favicon.svg' }],
     ['script', { async: '', src: 'https://www.googletagmanager.com/gtag/js?id=G-8BTJB95WVT' }],
     [
@@ -31,6 +50,7 @@ export default defineConfig({
     logo: { src: '/logo.svg' },
     nav: [
       { text: 'Guide', link: '/intro/what-is-ozeanjs' },
+      { text: 'Issues', link: 'https://github.com/ozeanjs/ozean/issues' },
       {
         text: `v${pkg.version}`,
         items: [
