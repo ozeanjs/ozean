@@ -25,12 +25,30 @@ import { HttpStatus } from 'common/http-status.enum';
 import path from 'path';
 import type { CallHandler, Interceptor } from 'interfaces/interceptor.interface';
 import { INTERCEPTORS_METADATA_KEY } from 'decorators/use-interceptors.decorator';
+import type { DynamicModule } from 'interfaces/module.interface';
+import type { Provider, ProviderToken, TypeProvider } from 'interfaces/provider.interface';
+
+function isDynamicModule(m: any): m is DynamicModule {
+  return !!(m as DynamicModule).module;
+}
+
+function getModuleToken(m: Function | DynamicModule): Function {
+  return isDynamicModule(m) ? m.module : m;
+}
+
+function isTypeProvider(p: Provider): p is TypeProvider {
+  return typeof p === 'function';
+}
+
+function getProviderToken(p: Provider): ProviderToken {
+  return isTypeProvider(p) ? p : p.provide;
+}
 
 export class App {
   private globalFilters: (new (...args: any[]) => ExceptionFilter)[] = [];
   private readonly baseExceptionFilter: BaseExceptionFilter;
-  private moduleRefs = new Map<Function, IModuleRef>();
-  private rootModuleRef!: IModuleRef;
+  private readonly moduleContainer = new Map<Function, ModuleRef>();
+  private readonly globalProviders = new Map<ProviderToken, Provider>();
   private globalMiddlewares: (new (...args: any[]) => Middleware)[] = [];
   private globalModuleRefs = new Set<IModuleRef>();
   private globalGuards: (new (...args: any[]) => CanActivate)[] = [];
@@ -51,11 +69,8 @@ export class App {
     });
 
     console.log(`Initializing app with root module: ${this.rootModuleClass.name}`);
-    this._compileModules();
-    if (!this.rootModuleRef) {
-      throw new Error('Root module could not be compiled.');
-    }
-    this._bootstrapInstances();
+    this._scanModules();
+    this._bootstrap();
   }
 
   useGlobalInterceptors(
@@ -95,42 +110,51 @@ export class App {
     return this;
   }
 
-  private _compileModules(): void {
-    const compile = (moduleClass: Function): IModuleRef => {
-      if (this.moduleRefs.has(moduleClass)) return this.moduleRefs.get(moduleClass)!;
-      const moduleRef = new ModuleRef(moduleClass);
-      this.moduleRefs.set(moduleClass, moduleRef);
-      if (moduleRef.isGlobal) this.globalModuleRefs.add(moduleRef);
-      if (moduleClass === this.rootModuleClass) this.rootModuleRef = moduleRef;
-      if (moduleRef.metadata.imports) {
-        for (const importedModuleClass of moduleRef.metadata.imports) {
-          if (typeof importedModuleClass === 'function' && importedModuleClass.prototype) {
-            moduleRef.addImport(compile(importedModuleClass));
-          }
-        }
+  private _scanModules() {
+    const modulesToProcess: (Function | DynamicModule)[] = [this.rootModuleClass];
+    const processedTokens = new Set<Function>();
+
+    while (modulesToProcess.length > 0) {
+      const moduleDef = modulesToProcess.shift()!;
+      const token = getModuleToken(moduleDef);
+
+      if (processedTokens.has(token)) continue;
+      processedTokens.add(token);
+
+      const moduleRef = new ModuleRef(moduleDef, this.globalProviders);
+      this.moduleContainer.set(token, moduleRef);
+
+      if (moduleRef.isGlobal) {
+        moduleRef.providers.forEach((provider, providerToken) => {
+          this.globalProviders.set(providerToken, provider);
+        });
       }
-      return moduleRef;
-    };
-    compile(this.rootModuleClass);
+
+      (moduleRef.metadata.imports || []).forEach((importedModuleDef) => {
+        modulesToProcess.push(importedModuleDef);
+      });
+    }
+
+    // Link modules after all have been scanned
+    this.moduleContainer.forEach((moduleRef, token) => {
+      (moduleRef.metadata.imports || []).forEach((importedModuleDef) => {
+        const importedModuleToken = getModuleToken(importedModuleDef);
+        const importedModuleRef = this.moduleContainer.get(importedModuleToken);
+        if (importedModuleRef) {
+          moduleRef.addImport(importedModuleRef);
+        }
+      });
+    });
   }
 
-  private _bootstrapInstances(): void {
-    for (const moduleRef of this.moduleRefs.values()) {
+  private _bootstrap(): void {
+    this.moduleContainer.forEach((moduleRef) => {
       const context = createResolutionContext(moduleRef, this.globalModuleRefs);
-      if (moduleRef.metadata.providers)
-        for (const ProviderClass of moduleRef.metadata.providers)
-          if (typeof ProviderClass === 'function' && ProviderClass.prototype) {
-            const instance = resolve(ProviderClass as any, context);
-            this.resolvedInstances.push(instance);
-          }
-
-      if (moduleRef.metadata.controllers)
-        for (const ControllerClass of moduleRef.metadata.controllers)
-          if (typeof ControllerClass === 'function' && ControllerClass.prototype)
-            resolve(ControllerClass as any, context);
-
-      this._callOnModuleInit();
-    }
+      moduleRef.providers.forEach((provider) => {
+        this.resolvedInstances.push(resolve(getProviderToken(provider), context));
+      });
+    });
+    this._callOnModuleInit();
   }
 
   private async _callOnModuleInit(): Promise<void> {
@@ -209,7 +233,7 @@ export class App {
           typeof Interceptor === 'function' && Interceptor.prototype
             ? Interceptor
             : (Interceptor as Function)();
-        return resolve(InterceptorClass as any, context, {
+        return resolve(InterceptorClass as ProviderToken, context, {
           bypassAccessibilityCheck: true,
         }) as Interceptor;
       });
@@ -266,7 +290,7 @@ export class App {
   }
 
   private getModuleRefByController(controllerToken: Function): IModuleRef | undefined {
-    for (const mRef of this.moduleRefs.values()) {
+    for (const mRef of this.moduleContainer.values()) {
       if (mRef.metadata.controllers?.includes(controllerToken)) return mRef;
     }
     return undefined;
@@ -380,7 +404,7 @@ export class App {
             // Build the interceptor chain
             const interceptorInstances = executionPlan!.interceptorInstances;
             const interceptorChain: CallHandler = interceptorInstances
-              .slice() // Create a shallow copy to not affect the cache
+              .slice()
               .reverse()
               .reduce(
                 (next: any, interceptor: any) => ({
