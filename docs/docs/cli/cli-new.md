@@ -20,8 +20,6 @@ ozean n <project-name>
 
 - **`<project-name>`** (required): The name of the folder and the project you want to create.
 
----
-
 ## What the `new` command does
 
 When you run `ozean new my-awesome-app`, the CLI automatically performs new project.
