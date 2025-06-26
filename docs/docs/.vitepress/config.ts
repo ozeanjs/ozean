@@ -107,6 +107,7 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/ozeanjs/ozean' },
       { icon: 'npm', link: 'https://www.npmjs.com/package/ozean' },
       { icon: 'discord', link: 'https://discord.gg/rMBc8Snft4' },
+      { icon: 'x', link: 'https://x.com/ozeanjs' },
     ],
 
     search: {

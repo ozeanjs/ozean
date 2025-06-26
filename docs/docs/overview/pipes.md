@@ -15,8 +15,6 @@ We use the `@UsePipes()` decorator to "attach" the desired Pipe to the Route Han
 
 OzeanJs comes with a built-in `ValidationPipe`, a powerful pipe that works with the `class-validator` and `class-transformer` libraries to automatically validate and transform data from the request body according to a specified DTO (Data Transfer Object).
 
----
-
 ## Usage Example: Input Validation
 
 Here is a complete example of using `ValidationPipe` to validate data for creating a new user.

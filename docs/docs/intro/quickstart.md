@@ -6,8 +6,6 @@ This guide shows the fastest way to create and run your first OzeanJs project us
 
 Ensure you have **Bun** installed on your machine.
 
----
-
 ### Step 1: Create a New Project with the CLI
 
 You don't need to install our CLI beforehand. You can use the `bunx` command to download and run it immediately.
@@ -29,8 +27,6 @@ Once the command is finished, navigate into your project folder:
 cd my-awesome-app
 ```
 
----
-
 ### Step 2: Run the Development Server
 
 Run your application in development mode with the command:
@@ -42,8 +38,6 @@ bun run index
 (This script is already defined in the `package.json` of the generated project.)
 
 You should see a message in your terminal indicating that your application is running on `http://localhost:3000`.
-
----
 
 ### Step 3: Test the Application
 

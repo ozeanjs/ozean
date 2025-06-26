@@ -8,8 +8,6 @@ The main components of an OceanJs application consist of three key parts:
 - **Providers**: Classes that handle Business Logic (mostly Services).
 - **Controllers**: Classes that receive HTTP Requests and send back Responses.
 
----
-
 ## 1. Modules: The Foundation of an Application
 
 Modules are the core of code organization in OceanJs. Every application has at least one module, the Root Module (e.g., `AppModule`). We use the `@Module()` decorator to define a module.
@@ -33,8 +31,6 @@ import { UsersService } from './users.service';
 })
 export class UsersModule {}
 ```
-
----
 
 ## 2. Providers and Dependency Injection (DI)
 
@@ -67,8 +63,6 @@ export class UsersController {
   }
 }
 ```
-
----
 
 ## 3. Controllers and Request Lifecycle
 

@@ -1,10 +1,17 @@
 <p align="center">
   <a href="https://ozeanjs.com">
-    <img src="./docs/src/assets/logo.svg" alt="OzeanJs" width="150">
+    <img src="./docs/docs/public/logo.svg" alt="OzeanJs" width="150">
   </a>
 </p>
 
 <p align="center">A progressive <a href="https://ozeanjs.com">OzeanJs</a> framework for crafting efficient and scalable server-side applications.</p>
+
+<p align="center">
+  <img src="https://img.shields.io/npm/v/ozean" alt="npm version">
+  <img src="https://img.shields.io/npm/dm/ozean" alt="npm download">
+  <img src="https://img.shields.io/badge/bun-compatible-brightgreen" alt="bun compatible">
+  <img src="https://img.shields.io/github/license/ozeanjs/ozean" alt="License">
+</p>
 
 # OzeanJs 🌊
 
@@ -103,3 +110,11 @@ Hello cat.
 That's it! In just 3 simple steps, your first OceanJs project is ready to go. Try opening the project in your favorite editor and start modifying the code in the `src` folder!
 
 Happy coding with OzeanJs!
+
+[npm-url]: https://www.npmjs.com/package/ozean
+[npm-version-image]: https://img.shields.io/npm/v/ozean.svg?style=flat
+[npm-downloads-image]: https://img.shields.io/npm/dm/ozean.svg?style=flat
+[npm-downloads-url]: https://npmcharts.com/compare/ozean?minimal=true
+[license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
+[license-url]: LICENSE
+[bun-compatible]: https://img.shields.io/badge/bun-compatible-brightgreen
