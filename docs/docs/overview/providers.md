@@ -10,8 +10,6 @@ The `@Injectable()` decorator marks a class as a provider that can be managed by
 
 Dependency Injection is a design pattern where the framework takes control of creating and delivering dependencies (like services) to classes that need them (like controllers). In OzeanJs, this is done through constructor injection: you simply declare the dependency you need as a constructor parameter, along with its type. The framework handles the rest.
 
----
-
 ## Complete Example: `Users` Feature
 
 Here is a complete example that demonstrates how Controllers, Providers, and Modules work together.

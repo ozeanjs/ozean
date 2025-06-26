@@ -6,8 +6,6 @@ This document will guide you through installing and starting an OceanJs project.
 
 Ensure you have **Bun** installed on your machine.
 
----
-
 ## Method 1: Installation via Ozean CLI (Recommended)
 
 This is the **fastest and easiest** way to start your OceanJs project, as the CLI handles all the necessary basic setup automatically.
@@ -36,8 +34,6 @@ bun run index
 ```
 
 Your application will start running at `http://localhost:3000` immediately!
-
----
 
 ## Method 2: Manual Installation
 
