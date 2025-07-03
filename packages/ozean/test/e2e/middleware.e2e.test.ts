@@ -11,6 +11,7 @@ import {
   type Middleware,
   type NextFunction,
   UseMiddleware,
+  Req,
 } from '../../src';
 
 const executionOrder: string[] = [];
@@ -18,6 +19,7 @@ const executionOrder: string[] = [];
 @Injectable()
 class GlobalMiddleware1 implements Middleware {
   async use(req: Request, next: NextFunction) {
+    (req as any).state = { user: 'User A' };
     executionOrder.push('GlobalMiddleware1');
     return await next();
   }
@@ -59,9 +61,9 @@ class ShortCircuitMiddleware implements Middleware {
 class TestController {
   @Get('/all')
   @UseMiddleware(RouteMiddleware)
-  getWithAllMiddlewares() {
+  getWithAllMiddlewares(@Req() req: Request) {
     executionOrder.push('Handler');
-    return { success: true };
+    return { success: true, userData: (req as any).state.user };
   }
 
   @Get('/no-route-mw')
@@ -108,6 +110,14 @@ describe('Middlewares (E2E)', () => {
 
   beforeEach(() => {
     executionOrder.length = 0;
+  });
+
+  test('should execute global, controller, and route middlewares dsfdsfin correct order', async () => {
+    const response = await fetch(new URL('/middleware-test/all', server.url));
+
+    expect(response.status).toBe(200);
+
+    expect((await response.json()).userData).toEqual('User A');
   });
 
   test('should execute global, controller, and route middlewares in correct order', async () => {
