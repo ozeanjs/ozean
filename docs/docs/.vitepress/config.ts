@@ -85,6 +85,7 @@ export default defineConfig({
           { text: 'Modules', link: '/overview/modules' },
           { text: 'Controllers', link: '/overview/controllers' },
           { text: 'Providers', link: '/overview/providers' },
+          { text: 'Middleware', link: '/overview/middleware' },
           { text: 'Pipes', link: '/overview/pipes' },
           { text: 'Guards', link: '/overview/guards' },
           { text: 'File Uploads', link: '/overview/file-uploads' },
