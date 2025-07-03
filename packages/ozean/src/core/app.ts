@@ -375,11 +375,17 @@ export class App {
                 const meta = executionPlan!.paramMeta[i];
                 let val: any;
                 if (meta) {
-                  if (meta.type === 'file') val = (req as any).file;
-                  else if (meta.type === 'query')
+                  if (meta.type === 'req') {
+                    val = req;
+                  } else if (meta.type === 'file') {
+                    val = (req as any).file;
+                  } else if (meta.type === 'query') {
                     val = Object.fromEntries(url.searchParams)[meta.key];
-                  else if (meta.type === 'param') val = matched.params[meta.key];
-                  else if (meta.type === 'body') val = meta.key ? body[meta.key] : body;
+                  } else if (meta.type === 'param') {
+                    val = matched.params[meta.key];
+                  } else if (meta.type === 'body') {
+                    val = meta.key ? body[meta.key] : body;
+                  }
                 }
                 const argMeta: ArgumentMetadata = {
                   type: meta?.type,
