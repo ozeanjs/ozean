@@ -1,5 +1,5 @@
 function createParameterDecorator(
-  type: 'query' | 'param' | 'body',
+  type: 'req' | 'query' | 'param' | 'body',
   key?: string
 ): ParameterDecorator {
   return (target: Object, propertyKey: string | symbol | undefined, parameterIndex: number) => {
@@ -13,6 +13,7 @@ function createParameterDecorator(
     Reflect.defineMetadata('custom:param', existingParams, target, propertyKey);
   };
 }
+export const Req = () => createParameterDecorator('req');
 export const Query = (key: string) => createParameterDecorator('query', key);
 export const Param = (key: string) => createParameterDecorator('param', key);
 export const Body = (key?: string) => createParameterDecorator('body', key);
