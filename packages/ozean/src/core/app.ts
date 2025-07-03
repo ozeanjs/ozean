@@ -423,7 +423,6 @@ export class App {
           };
 
           return await executionPlan.middlewareInstances
-            .slice()
             .reverse()
             .reduce((next, middleware) => () => middleware.use(req, next), finalHandler)();
         } catch (error: any) {
