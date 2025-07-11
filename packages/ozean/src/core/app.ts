@@ -27,6 +27,18 @@ import type { CallHandler, Interceptor } from 'interfaces/interceptor.interface'
 import { INTERCEPTORS_METADATA_KEY } from 'decorators/use-interceptors.decorator';
 import type { DynamicModule } from 'interfaces/module.interface';
 import type { Provider, ProviderToken, TypeProvider } from 'interfaces/provider.interface';
+import { WsRouter } from './ws-router';
+import { GATEWAY_METADATA } from '../decorators/websocket-gateway.decorator';
+import type {
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnGatewayInit,
+} from '../interfaces/websocket-gateway.interface';
+import { WEBSOCKET_SERVER_METADATA } from '../decorators/websocket-server.decorator';
+import { BaseWsExceptionFilter } from '../filters/base-ws-exception-filter';
+import type { WsExceptionFilter } from '../interfaces/ws-exception-filter.interface';
+import { WS_PARAM_METADATA } from 'decorators/websocket-params.decorator';
+import { WS_FILTERS_METADATA_KEY } from 'decorators/use-ws-filters.decorator';
 
 function isDynamicModule(m: any): m is DynamicModule {
   return !!(m as DynamicModule).module;
@@ -47,6 +59,8 @@ function getProviderToken(p: Provider): ProviderToken {
 export class App {
   private globalFilters: (new (...args: any[]) => ExceptionFilter)[] = [];
   private readonly baseExceptionFilter: BaseExceptionFilter;
+  private globalWsFilters: (new (...args: any[]) => WsExceptionFilter)[] = [];
+  private readonly baseWsExceptionFilter: BaseWsExceptionFilter;
   private readonly moduleContainer = new Map<Function, ModuleRef>();
   private readonly globalProviders = new Map<ProviderToken, Provider>();
   private globalMiddlewares: (new (...args: any[]) => Middleware)[] = [];
@@ -57,9 +71,12 @@ export class App {
   private globalInterceptors: (Function | (new (...args: any[]) => Interceptor))[] = [];
   private router: FindMyWay.Instance<FindMyWay.HTTPVersion.V1>;
   private resolvedInstances: any[] = [];
+  private readonly wsRouter = new WsRouter();
+  private gatewayInstances: any[] = [];
 
   constructor(private rootModuleClass: Function) {
     this.baseExceptionFilter = new BaseExceptionFilter();
+    this.baseWsExceptionFilter = new BaseWsExceptionFilter();
 
     this.router = FindMyWay({
       // ignoreTrailingSlash: true,
@@ -102,6 +119,11 @@ export class App {
 
   useGlobalFilters(...filters: (new (...args: any[]) => ExceptionFilter)[]): this {
     this.globalFilters.push(...filters);
+    return this;
+  }
+
+  public useGlobalWsFilters(...filters: (new (...args: any[]) => WsExceptionFilter)[]): this {
+    this.globalWsFilters.push(...filters);
     return this;
   }
 
@@ -152,6 +174,10 @@ export class App {
       const context = createResolutionContext(moduleRef, this.globalModuleRefs);
       moduleRef.providers.forEach((provider) => {
         this.resolvedInstances.push(resolve(getProviderToken(provider), context));
+        if (Reflect.getMetadata(GATEWAY_METADATA, provider)) {
+          this.gatewayInstances.push(resolve(getProviderToken(provider), context));
+          this.wsRouter.registerGateway(resolve(getProviderToken(provider), context));
+        }
       });
     });
     this._callOnModuleInit();
@@ -296,6 +322,15 @@ export class App {
     return undefined;
   }
 
+  private getModuleRefByProvider(providerToken: Function): ModuleRef | undefined {
+    for (const mRef of this.moduleContainer.values()) {
+      if (mRef.providers.has(providerToken)) {
+        return mRef;
+      }
+    }
+    return undefined;
+  }
+
   listen(port: number) {
     this._initializeRouter();
     this._callOnApplicationBootstrap();
@@ -303,7 +338,10 @@ export class App {
 
     const server = Bun.serve({
       port,
-      fetch: async (req) => {
+      fetch: async (req, server) => {
+        if (server.upgrade(req)) {
+          return;
+        }
         let executionPlan: RouteExecutionPlan | undefined;
         let context: ResolutionContext | undefined;
 
@@ -437,9 +475,102 @@ export class App {
           return this.baseExceptionFilter.catch(error, host);
         }
       },
+      websocket: {
+        open: async (ws) => {
+          for (const instance of this.gatewayInstances) {
+            if (typeof (instance as OnGatewayConnection).handleConnection === 'function') {
+              await (instance as OnGatewayConnection).handleConnection(
+                ws,
+                (ws.data as any)?.request as Request
+              );
+            }
+          }
+        },
+        message: async (ws, message) => {
+          let gatewayInstance: any;
+          let handlerName: string | symbol = '';
+          let moduleRef: ModuleRef | undefined;
+
+          try {
+            const parsed = JSON.parse(message.toString());
+            if (!parsed.event) return;
+
+            const handlerInfo = this.wsRouter.findHandler(parsed.event);
+            if (!handlerInfo) return;
+
+            ({ instance: gatewayInstance, handlerName } = handlerInfo);
+
+            const handler = gatewayInstance[handlerName];
+            const paramsMetadata =
+              Reflect.getMetadata(WS_PARAM_METADATA, gatewayInstance, handlerName) || [];
+            const args = new Array(paramsMetadata.length);
+            for (let i = 0; i < args.length; i++) {
+              const meta = paramsMetadata[i];
+              if (meta.type === 'socket') args[i] = ws;
+              if (meta.type === 'body') args[i] = parsed.data;
+            }
+
+            const result = await handler.apply(gatewayInstance, args);
+            if (result) ws.send(JSON.stringify(result));
+          } catch (error: any) {
+            const host: ArgumentsHost = { getRequest: () => ws as any }; // Adapt host for WS
+
+            if (gatewayInstance && handlerName) {
+              moduleRef = this.getModuleRefByProvider(gatewayInstance.constructor);
+            }
+
+            if (moduleRef) {
+              const context = createResolutionContext(moduleRef, this.globalModuleRefs);
+              const routeFilters =
+                Reflect.getMetadata(WS_FILTERS_METADATA_KEY, gatewayInstance, handlerName) || [];
+              const gatewayFilters =
+                Reflect.getMetadata(WS_FILTERS_METADATA_KEY, gatewayInstance.constructor) || [];
+              const allFilterClasses = [
+                ...this.globalWsFilters,
+                ...gatewayFilters,
+                ...routeFilters,
+              ];
+
+              for (const FilterClass of allFilterClasses) {
+                const exceptionTypesToCatch =
+                  Reflect.getMetadata(CATCH_METADATA_KEY, FilterClass) || [];
+                const canCatch =
+                  exceptionTypesToCatch.length === 0 ||
+                  exceptionTypesToCatch.some((type: any) => error instanceof type);
+                if (canCatch) {
+                  const filterInstance: WsExceptionFilter = resolve(FilterClass, context);
+                  // The filter itself will handle sending the error message.
+                  filterInstance.catch(error, host);
+                  return; // Stop further processing
+                }
+              }
+            }
+
+            // Fallback to the base WebSocket exception filter
+            this.baseWsExceptionFilter.catch(error, host);
+          }
+        },
+        close: async (ws, code, reason) => {
+          for (const instance of this.gatewayInstances) {
+            if (typeof (instance as OnGatewayDisconnect).handleDisconnect === 'function') {
+              await (instance as OnGatewayDisconnect).handleDisconnect(ws);
+            }
+          }
+        },
+      },
       error: (e: Error) =>
         new Response('Server error', { status: HttpStatus.INTERNAL_SERVER_ERROR }),
     });
+
+    for (const instance of this.gatewayInstances) {
+      const serverPropKey = Reflect.getMetadata(WEBSOCKET_SERVER_METADATA, instance.constructor);
+      if (serverPropKey) {
+        instance[serverPropKey] = server;
+      }
+      if (typeof (instance as OnGatewayInit).afterInit === 'function') {
+        (instance as OnGatewayInit).afterInit(server);
+      }
+    }
 
     console.log(`🌊 App is running on http://localhost:${port}`);
 
