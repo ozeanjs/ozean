@@ -93,6 +93,7 @@ export default defineConfig({
           { text: 'Lifecycle Hooks', link: '/overview/lifecycle-hooks' },
           { text: 'Dynamic Modules', link: '/overview/dynamic-modules' },
           { text: 'Exception Handling', link: '/overview/exception-handling' },
+          { text: 'Websocket', link: '/overview/websocket' },
         ],
       },
       {
@@ -113,6 +114,11 @@ export default defineConfig({
 
     search: {
       provider: 'local',
+    },
+
+    editLink: {
+      pattern: 'https://github.com/ozeanjs/ozean/edit/main/docs/docs/:path',
+      text: 'Edit on GitHub',
     },
   },
 });

@@ -17,6 +17,17 @@ export { Reflector } from './core/reflector.service';
 export { ValidationPipe } from './pipes/validation.pipe';
 export { FileInterceptor } from './interceptors/file.interceptor';
 export { HttpStatus } from './common/http-status.enum';
+export { WebSocketGateway } from './decorators/websocket-gateway.decorator';
+export { SubscribeMessage } from './decorators/subscribe-message.decorator';
+export { WebSocketServer } from './decorators/websocket-server.decorator';
+export { ConnectedSocket, MessageBody } from './decorators/websocket-params.decorator';
+export type {
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnGatewayInit,
+} from './interfaces/websocket-gateway.interface';
+export { UseWsFilters } from './decorators/use-ws-filters.decorator';
+export type { WsExceptionFilter } from './interfaces/ws-exception-filter.interface';
 export type { DynamicModule, ModuleMetadata } from './interfaces/module.interface';
 export type { Middleware, NextFunction } from './interfaces/middleware.interface';
 export type { PipeTransform, ArgumentMetadata } from './interfaces/pipe.interface';
