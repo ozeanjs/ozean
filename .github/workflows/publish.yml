@@ -55,6 +55,6 @@ jobs:
           embed-title: '🚀 New Release Published: ${{ github.event.release.name }}'
           embed-color: 3066993
           embed-description: |
-            What's Changed:
+            @everyone
             ${{ github.event.release.body }}
           embed-footer-text: 'Repository: ${{ github.repository }}'
