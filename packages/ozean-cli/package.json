@@ -1,6 +1,6 @@
 {
   "name": "ozean-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "This is the official Command-Line Interface (CLI) for the OzeanJs Framework. It helps you kickstart new projects.",
   "keywords": [
     "ozean",
