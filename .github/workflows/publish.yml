@@ -51,21 +51,10 @@ jobs:
         uses: tsickert/discord-webhook@v7.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          raw-data: |
-            [
-              {
-                "title": "🚀 New Release Published: ${{ github.event.release.name }}",
-                "description": "What's Changed: \n${{ github.event.release.body }}",
-                "url": "${{ github.event.release.html_url }}",
-                "color": 3066993,
-                "author": {
-                  "name": "${{ github.event.sender.login }}",
-                  "url": "${{ github.event.sender.html_url }}",
-                  "icon_url": "${{ github.event.sender.avatar_url }}"
-                },
-                "footer": {
-                  "text": "Repository: ${{ github.repository }}"
-                },
-                "timestamp": "${{ github.event.release.published_at }}"
-              }
-            ]
+          embed-url: ${{ github.event.release.html_url }}
+          embed-title: '🚀 New Release Published: ${{ github.event.release.name }}'
+          embed-color: 3066993
+          embed-description: |
+            What's Changed:
+            ${{ github.event.release.body }}
+          embed-footer-text: 'Repository: ${{ github.repository }}'
