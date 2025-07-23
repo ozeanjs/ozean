@@ -19,7 +19,7 @@ hero:
 
 features:
   - title: 🚀 Built for Speed
-    details: OceanJs is built on Bun, which means you benefit from the fastest runtime speed, dependency installation, and test execution available today, accelerating your entire development cycle.
+    details: OzeanJs is built on Bun, which means you benefit from the fastest runtime speed, dependency installation, and test execution available today, accelerating your entire development cycle.
   - title: ✨ Organized & Scalable Architecture
     details: With a system of Modules, Controllers, and Services inspired by Angular, your code is naturally organized, making it easy to understand, test, and scale your project into the future without chaos.
   - title: 💉 Powerful Dependency Injection

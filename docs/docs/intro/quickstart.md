@@ -53,4 +53,4 @@ curl http://localhost:3000/cats
 Hello cat.
 ```
 
-That's it! In just 3 simple steps, your first OceanJs project is ready to go. Try opening the project in your favorite editor and start modifying the code in the `src` folder!
+That's it! In just 3 simple steps, your first OzeanJs project is ready to go. Try opening the project in your favorite editor and start modifying the code in the `src` folder!
