@@ -1,8 +1,8 @@
 # Core Concepts
 
-OceanJs is built on a **Modular Architecture**, inspired by Angular, which gives your code a clear, scalable, and easy-to-extend structure.
+OzeanJs is built on a **Modular Architecture**, inspired by Angular, which gives your code a clear, scalable, and easy-to-extend structure.
 
-The main components of an OceanJs application consist of three key parts:
+The main components of an OzeanJs application consist of three key parts:
 
 - **Modules**: The containers for organizing various components.
 - **Providers**: Classes that handle Business Logic (mostly Services).
@@ -10,7 +10,7 @@ The main components of an OceanJs application consist of three key parts:
 
 ## 1. Modules: The Foundation of an Application
 
-Modules are the core of code organization in OceanJs. Every application has at least one module, the Root Module (e.g., `AppModule`). We use the `@Module()` decorator to define a module.
+Modules are the core of code organization in OzeanJs. Every application has at least one module, the Root Module (e.g., `AppModule`). We use the `@Module()` decorator to define a module.
 
 - **`providers`**: Registers Services or other Providers that will be managed by the DI Container and can be injected within this module.
 - **`controllers`**: Registers the Controllers that will be managed by this module.
@@ -21,7 +21,7 @@ Modules are the core of code organization in OceanJs. Every application has at l
 
 ```typescript
 // users.module.ts
-import { Module } from 'OceanJs';
+import { Module } from 'OzeanJs';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
@@ -53,7 +53,7 @@ export class UsersService {
 @Controller('/users')
 export class UsersController {
   // 1. Request UsersService here.
-  // 2. OceanJs will automatically create and inject an instance of UsersService.
+  // 2. OzeanJs will automatically create and inject an instance of UsersService.
   constructor(private readonly usersService: UsersService) {}
 
   @Get('/:id')

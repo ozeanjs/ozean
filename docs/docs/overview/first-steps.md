@@ -1,6 +1,6 @@
 # First steps
 
-This document will guide you through installing and starting an OceanJs project. There are two convenient methods to choose from.
+This document will guide you through installing and starting an OzeanJs project. There are two convenient methods to choose from.
 
 ### Prerequisites
 
@@ -8,7 +8,7 @@ Ensure you have **Bun** installed on your machine.
 
 ## Method 1: Installation via Ozean CLI (Recommended)
 
-This is the **fastest and easiest** way to start your OceanJs project, as the CLI handles all the necessary basic setup automatically.
+This is the **fastest and easiest** way to start your OzeanJs project, as the CLI handles all the necessary basic setup automatically.
 
 ### Step 1: Create a New Project
 
@@ -45,7 +45,7 @@ This method is suitable for those who want to control every aspect of the setup 
     ```bash
     bun init
     ```
-2.  **Install OceanJs**:
+2.  **Install OzeanJs**:
     ```bash
     bun add ozean
     ```
@@ -83,7 +83,7 @@ import { App, Module, Controller, Get } from 'ozean';
 class AppController {
   @Get()
   getHello() {
-    return 'Hello from OceanJs! 🌊';
+    return 'Hello from OzeanJs! 🌊';
   }
 }
 
@@ -99,7 +99,7 @@ const port = 3000;
 
 app.listen(port);
 
-console.log(`🌊 OceanJs application is running on http://localhost:${port}`);
+console.log(`🌊 OzeanJs application is running on http://localhost:${port}`);
 ```
 
 ### Step 4: Run the Application

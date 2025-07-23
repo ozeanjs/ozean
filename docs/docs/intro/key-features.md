@@ -1,10 +1,10 @@
 # Key Features
 
-OceanJs is designed to be a modern framework with a clear structure and high performance. Its key features are as follows:
+OzeanJs is designed to be a modern framework with a clear structure and high performance. Its key features are as follows:
 
 ### 🚀 **High Performance**
 
-**Built on Bun** OceanJs runs on Bun, the fastest JavaScript runtime, ensuring your applications have rapid response times, low memory usage, and an excellent developer experience (e.g., extremely fast dependency installation).
+**Built on Bun** OzeanJs runs on Bun, the fastest JavaScript runtime, ensuring your applications have rapid response times, low memory usage, and an excellent developer experience (e.g., extremely fast dependency installation).
 
 ### 🏗️ **Modular Architecture**
 
@@ -18,7 +18,7 @@ OceanJs is designed to be a modern framework with a clear structure and high per
 
 - **`@Injectable()` Decorator**: Marks classes (like Services, Middlewares, Pipes) to be managed by the DI container, allowing them to be automatically injected elsewhere.
 
-- **Constructor Injection**: Simply declare a dependency in the `constructor`, and the OceanJs DI system will create and provide the correct instance, leading to cleaner, loosely coupled, and easily testable code.
+- **Constructor Injection**: Simply declare a dependency in the `constructor`, and the OzeanJs DI system will create and provide the correct instance, leading to cleaner, loosely coupled, and easily testable code.
 
 ### ✨ **Excellent Developer Experience**
 
@@ -36,4 +36,4 @@ OceanJs is designed to be a modern framework with a clear structure and high per
 
 - Provides a base `HttpException` class, allowing you to throw errors with specific HTTP status codes. This makes error handling in your application standardized and predictable.
 
-Overall, OceanJs is a framework that aims to combine the advantages of a robust and established architecture with the speed and performance of the Bun runtime.
+Overall, OzeanJs is a framework that aims to combine the advantages of a robust and established architecture with the speed and performance of the Bun runtime.
